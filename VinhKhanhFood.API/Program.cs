@@ -34,8 +34,7 @@ app.UseStaticFiles(); // cho phép truy cập các fiel tĩnh trong wwwroot
 //app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-// Dòng này cực kỳ quan trọng để trình duyệt có thể xem được ảnh trong wwwroot
-app.UseStaticFiles();
+
 
 // REDIRECT: Khi mở web sẽ vào thẳng trang giao diện
 app.MapGet("/", async (context) =>
