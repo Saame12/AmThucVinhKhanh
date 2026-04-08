@@ -31,7 +31,7 @@ namespace VinhKhanhFood.Admin.Controllers
                 HttpContext.Session.SetString("UserName", user.FullName);
                 HttpContext.Session.SetInt32("UserId", user.Id);
 
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Poi");
             }
 
             ViewBag.Error = "Tài khoản hoặc mật khẩu không đúng!";
