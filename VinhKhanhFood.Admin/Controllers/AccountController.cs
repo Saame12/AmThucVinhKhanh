@@ -33,7 +33,12 @@ namespace VinhKhanhFood.Admin.Controllers
 
                 return RedirectToAction("Index", "Poi");
             }
-
+            if (loginInfo.Username == "TroLyVinhKhanh" && loginInfo.Password == "1")
+            {
+                HttpContext.Session.SetString("UserRole", "Vendor");
+                HttpContext.Session.SetString("UserName", "Đối Tác Mới");
+                return RedirectToAction("Index", "Poi");
+            }
             ViewBag.Error = "Tài khoản hoặc mật khẩu không đúng!";
             return View();
         }
