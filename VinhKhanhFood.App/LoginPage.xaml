@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VinhKhanhFood.App.LoginPage"
+             BackgroundColor="{StaticResource BackgroundPrimary}">
+
+    <VerticalStackLayout Spacing="20" Padding="30" VerticalOptions="Center">
+        <Label Text="Đăng Nhập" FontSize="32" FontAttributes="Bold" HorizontalOptions="Center" TextColor="{StaticResource Primary}"/>
+        <Label Text="Hệ thống ẩm thực Quận 4" HorizontalOptions="Center" Margin="0,0,0,20" TextColor="{StaticResource TextTertiary}"/>
+
+        <Border StrokeShape="RoundRectangle 10" Padding="10,0" StrokeThickness="1">
+            <Entry x:Name="TxtUsername" Placeholder="Tên đăng nhập" TextColor="{StaticResource TextPrimary}"/>
+        </Border>
+
+        <Border StrokeShape="RoundRectangle 10" Padding="10,0" StrokeThickness="1">
+            <Entry x:Name="TxtPassword" Placeholder="Mật khẩu" IsPassword="True" TextColor="{StaticResource TextPrimary}"/>
+        </Border>
+
+        <Button Text="XÁC NHẬN" Clicked="OnLoginBtnClicked" HeightRequest="50" CornerRadius="25" BackgroundColor="{StaticResource Primary}"/>
+
+        <Button Text="Hủy" Clicked="OnCancelClicked" BackgroundColor="Transparent" TextColor="{StaticResource TextTertiary}"/>
+    </VerticalStackLayout>
+</ContentPage>
