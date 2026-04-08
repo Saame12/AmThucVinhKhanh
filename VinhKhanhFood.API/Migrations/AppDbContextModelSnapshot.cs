@@ -25,10 +25,19 @@ namespace VinhKhanhFood.API.Migrations
                     b.Property<string>("AudioUrl")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("AudioUrl_EN")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AudioUrl_ZH")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description_EN")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description_ZH")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ImageUrl")
@@ -45,6 +54,9 @@ namespace VinhKhanhFood.API.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name_EN")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name_ZH")
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("OwnerId")

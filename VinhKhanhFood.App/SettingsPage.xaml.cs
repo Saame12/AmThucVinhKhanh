@@ -14,34 +14,15 @@ public partial class SettingsPage : ContentPage
         var savedLang = App.CurrentLanguage;
         // Cập nhật màu sắc highlight cho các Option dựa trên App.CurrentLanguage
         UpdateLanguageUI(savedLang);
-        // Cập nhật Slider
-        var savedRate = Preferences.Default.Get("SpeechRate", 1.0f);
+        // 1. Đồng bộ Tốc độ đọc
+        var savedRate = Preferences.Default.Get("UserSpeechSpeed", 1.0f);
         SpeedSlider.Value = savedRate;
+        LblSpeedValue.Text = $"{savedRate:F1}x";
+        CurrentSpeechRate = savedRate;
 
         // Highlight ngôn ngữ hiện tại khi trang mở
         string currentLanguage = App.CurrentLanguage ?? "vi";
-
-        if (currentLanguage == "vi")
-        {
-            OptVietnamese.BackgroundColor = Color.FromArgb("#33FF9800");
-            OptEnglish.BackgroundColor = Colors.Transparent;
-            OptChinese.BackgroundColor = Colors.Transparent;
-            LblCurrentLanguage.Text = "VN Tiếng Việt";
-        }
-        else if (currentLanguage == "en")
-        {
-            OptEnglish.BackgroundColor = Color.FromArgb("#33FF9800");
-            OptVietnamese.BackgroundColor = Colors.Transparent;
-            OptChinese.BackgroundColor = Colors.Transparent;
-            LblCurrentLanguage.Text = "GB English";
-        }
-        else if (currentLanguage == "zh")
-        {
-            OptChinese.BackgroundColor = Color.FromArgb("#33FF9800");
-            OptVietnamese.BackgroundColor = Colors.Transparent;
-            OptEnglish.BackgroundColor = Colors.Transparent;
-            LblCurrentLanguage.Text = "CN 中文";
-        }
+        RefreshLanguageDisplay(currentLanguage);
 
     }
 
@@ -77,26 +58,35 @@ public partial class SettingsPage : ContentPage
         await LanguageModal.FadeTo(0, 200, Easing.SinIn);
         LanguageModal.IsVisible = false;
     }
+    private void RefreshLanguageDisplay(string langCode)
+    {
+        // Cập nhật Text hiển thị
+        LblCurrentLanguage.Text = langCode switch
+        {
+            "en" => "GB English",
+            "zh" => "CN 中文",
+            _ => "VN Tiếng Việt"
+        };
 
+        // Cập nhật màu sắc Highlight
+        OptVietnamese.BackgroundColor = langCode == "vi" ? Color.FromArgb("#33FF9800") : Colors.Transparent;
+        OptEnglish.BackgroundColor = langCode == "en" ? Color.FromArgb("#33FF9800") : Colors.Transparent;
+        OptChinese.BackgroundColor = langCode == "zh" ? Color.FromArgb("#33FF9800") : Colors.Transparent;
+    }
     // Khi chọn 1 ngôn ngữ trong danh sách
     private void OnLanguageSelected(object sender, TappedEventArgs e)
     {
-        if (sender is Grid grid && grid.GestureRecognizers[0] is TapGestureRecognizer tap && tap.CommandParameter is string selectedLang)
+        if (e.Parameter is string langCode)
         {
-            LblCurrentLanguage.Text = selectedLang;
-
-            // Xác định mã ngôn ngữ dựa trên CommandParameter
-            string langCode = selectedLang.Contains("VN") ? "vi" :
-                              selectedLang.Contains("GB") ? "en" : "zh";
-
-            // Cập nhật trạng thái App
+            // Cập nhật logic hệ thống
             App.CurrentLanguage = langCode;
             Services.LocalizationService.SetLanguage(langCode);
+            Preferences.Default.Set("Language", langCode);
 
-            // Cập nhật màu nền highlight một cách tự động
-            UpdateLanguageUI(langCode);
+            // Cập nhật giao diện
+            RefreshLanguageDisplay(langCode);
 
-            // Gọi hàm đóng bảng
+            // Đóng modal
             OnCloseModalTapped(this, EventArgs.Empty);
         }
     }

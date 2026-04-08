@@ -102,7 +102,7 @@
                     <Border x:Name="OptVietnamese" BackgroundColor="#33FF9800" StrokeShape="RoundRectangle 12" StrokeThickness="0" Padding="15">
                         <Grid ColumnDefinitions="Auto, *, Auto">
                             <Grid.GestureRecognizers>
-                                <TapGestureRecognizer CommandParameter="VN Tiếng Việt" Tapped="OnLanguageSelected" />
+                                <TapGestureRecognizer CommandParameter="vi" Tapped="OnLanguageSelected" />
                             </Grid.GestureRecognizers>
                             <Label Grid.Column="0" Text="VN" TextColor="{StaticResource TextSecondary}" FontSize="16" VerticalOptions="Center" Margin="0,0,10,0"/>
                             <Label Grid.Column="1" Text="Tiếng Việt" TextColor="{StaticResource TextPrimary}" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
@@ -113,7 +113,7 @@
                     <Border x:Name="OptEnglish" BackgroundColor="Transparent" StrokeShape="RoundRectangle 12" StrokeThickness="0" Padding="15">
                         <Grid ColumnDefinitions="Auto, *, Auto">
                             <Grid.GestureRecognizers>
-                                <TapGestureRecognizer CommandParameter="GB English" Tapped="OnLanguageSelected" />
+                                <TapGestureRecognizer CommandParameter="en" Tapped="OnLanguageSelected" />
                             </Grid.GestureRecognizers>
                             <Label Grid.Column="0" Text="GB" TextColor="{StaticResource TextSecondary}" FontSize="16" VerticalOptions="Center" Margin="0,0,10,0"/>
                             <Label Grid.Column="1" Text="English" TextColor="{StaticResource TextPrimary}" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
@@ -124,7 +124,7 @@
                     <Border x:Name="OptChinese" BackgroundColor="Transparent" StrokeShape="RoundRectangle 12" StrokeThickness="0" Padding="15">
                         <Grid ColumnDefinitions="Auto, *, Auto">
                             <Grid.GestureRecognizers>
-                                <TapGestureRecognizer CommandParameter="CN 中文" Tapped="OnLanguageSelected" />
+                                <TapGestureRecognizer CommandParameter="zh" Tapped="OnLanguageSelected" />
                             </Grid.GestureRecognizers>
                             <Label Grid.Column="0" Text="CN" TextColor="{StaticResource TextSecondary}" FontSize="16" VerticalOptions="Center" Margin="0,0,10,0"/>
                             <Label Grid.Column="1" Text="中文" TextColor="{StaticResource TextPrimary}" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />

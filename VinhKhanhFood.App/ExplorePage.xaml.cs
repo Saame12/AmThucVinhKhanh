@@ -18,43 +18,51 @@ public partial class ExplorePage : ContentPage
     {
         base.OnAppearing();
 
-        // Subscribe vào event LanguageChanged
+        // Đăng ký sự kiện đổi ngôn ngữ để làm mới danh sách ngay lập tức
         Services.LocalizationService.LanguageChanged += OnLanguageChanged;
 
-        await _viewModel.LoadLocationsAsync();
+        // Tải dữ liệu lần đầu hoặc làm mới
+        if (_viewModel.Locations.Count == 0)
+        {
+            await _viewModel.LoadLocationsAsync();
+        }
     }
 
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-
-        // Unsubscribe từ event
+        // Hủy đăng ký để tránh rò rỉ bộ nhớ
         Services.LocalizationService.LanguageChanged -= OnLanguageChanged;
     }
 
     private void OnLanguageChanged(object? sender, Services.LanguageChangedEventArgs e)
     {
-        // Cập nhật UI khi ngôn ngữ thay đổi
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            // Cập nhật tiêu đề trang khi đổi ngôn ngữ
+            // 1. Cập nhật Tiêu đề trang từ file Resource dịch thuật
             Title = Services.LocalizationService.GetString("Explore");
-            // Làm mới danh sách để DisplayName và DisplayDescription cập nhật theo ngôn ngữ mới
-            var tempLocations = _viewModel.Locations.ToList();
-            _viewModel.Locations.Clear();
-            foreach (var item in tempLocations) _viewModel.Locations.Add(item);
+
+            // 2. Ép danh sách cập nhật lại để gọi vào DisplayName/DisplayDescription
+            if (_viewModel.Locations != null && _viewModel.Locations.Any())
+            {
+                var currentData = _viewModel.Locations.ToList();
+                _viewModel.Locations.Clear();
+                foreach (var item in currentData)
+                {
+                    _viewModel.Locations.Add(item);
+                }
+            }
         });
     }
 
-    // Xử lý khi người dùng bấm vào một quán ốc trong danh sách
     private async void OnLocationSelected(object sender, SelectionChangedEventArgs e)
     {
-        // Lấy dữ liệu của quán vừa được bấm
         if (e.CurrentSelection.FirstOrDefault() is FoodLocation selectedLocation)
         {
-            // Điều hướng đến trang chi tiết, truyền dữ liệu của quán vừa chọn
-            await Shell.Current.Navigation.PushAsync(new DetailPage(selectedLocation));
-            // Bỏ highlight (bỏ bôi đen) cái thẻ vừa chọn
+            // Điều hướng sang trang chi tiết
+            await Navigation.PushAsync(new DetailPage(selectedLocation));
+
+            // Bỏ chọn item trên UI
             ((CollectionView)sender).SelectedItem = null;
         }
     }

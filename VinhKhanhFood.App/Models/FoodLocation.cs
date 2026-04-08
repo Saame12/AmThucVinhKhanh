@@ -10,25 +10,53 @@ namespace VinhKhanhFood.App.Models
     {
         public int Id { get; set; }
 
-        // Tiếng Việt (Mặc định)
+        // --- TIẾNG VIỆT (Mặc định) ---
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? AudioUrl { get; set; }
 
-        // Tiếng Anh (Mở rộng cho đa ngôn ngữ)
+        // --- TIẾNG ANH ---
         public string? Name_EN { get; set; }
         public string? Description_EN { get; set; }
+        public string? AudioUrl_EN { get; set; }
 
-        // Các thông số kỹ thuật dùng chung
+        // --- TIẾNG TRUNG ---
+        public string? Name_ZH { get; set; }
+        public string? Description_ZH { get; set; }
+        public string? AudioUrl_ZH { get; set; }
+
+        // --- CÁC THÔNG SỐ CHUNG ---
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public string? ImageUrl { get; set; }
-
-        // Thuộc tính này giúp XAML bốc đúng tên theo ngôn ngữ đang chọn
-        public string DisplayName => App.CurrentLanguage == "en" ? (Name_EN ?? Name) : Name;
-        public string DisplayDescription => App.CurrentLanguage == "en" ? (Description_EN ?? Description) : Description;
-
-        // Thông tin quản lý (Phân quyền Vendor)
         public int? OwnerId { get; set; }
+
+        // =================================================V
+        // LOGIC HIỂN THỊ ĐA NGÔN NGỮ (DISPLAY PROPERTIES)
+        // =================================================
+
+        // Tự động chọn Tên theo ngôn ngữ hệ thống
+        public string DisplayName => App.CurrentLanguage switch
+        {
+            "en" => !string.IsNullOrWhiteSpace(Name_EN) ? Name_EN : Name,
+            "zh" => !string.IsNullOrWhiteSpace(Name_ZH) ? Name_ZH : Name,
+            _ => Name // Mặc định là tiếng Việt (vi)
+        };
+
+        // Tự động chọn Mô tả
+        public string DisplayDescription => App.CurrentLanguage switch
+        {
+            "en" => !string.IsNullOrWhiteSpace(Description_EN) ? Description_EN : Description,
+            "zh" => !string.IsNullOrWhiteSpace(Description_ZH) ? Description_ZH : Description,
+            _ => Description
+        };
+
+        // Tự động chọn File âm thanh (Cực kỳ quan trọng cho Audio Guide)
+        public string? DisplayAudioUrl => App.CurrentLanguage switch
+        {
+            "en" => !string.IsNullOrWhiteSpace(AudioUrl_EN) ? AudioUrl_EN : AudioUrl,
+            "zh" => !string.IsNullOrWhiteSpace(AudioUrl_ZH) ? AudioUrl_ZH : AudioUrl,
+            _ => AudioUrl
+        };
     }
 }
