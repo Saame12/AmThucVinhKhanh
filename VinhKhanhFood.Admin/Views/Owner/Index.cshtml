@@ -1,0 +1,170 @@
+@{
+    ViewData["Title"] = "Dashboard Chủ Nhà Hàng";
+    var userName = Context.Session.GetString("UserName") ?? "Chủ Hàng";
+    var userId = Context.Session.GetInt32("UserId") ?? 0;
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>👨‍🍳 Dashboard Chủ Nhà Hàng</h2>
+            <hr />
+        </div>
+    </div>
+
+    <!-- User Info -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <strong>👤 Xin chào, @userName!</strong><br>
+                Bạn đang sử dụng tài khoản chủ nhà hàng. Dưới đây là các công cụ quản lý của bạn.
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Actions -->
+    <div class="row">
+        <!-- Quản lý POI/Quán -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">🏪 Quản Lý Quán Ăn</h5>
+                </div>
+                <div class="card-body">
+                    <p>Đăng ký quán ăn mới, quản lý thông tin POI (Points of Interest) của bạn.</p>
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            📝 <strong>Lưu ý:</strong> Các quán ăn mới cần được duyệt bởi Admin trước khi hiển thị công khai.
+                        </small>
+                    </div>
+                    <a href="@Url.Action("FoodLocations", "Owner")" class="btn btn-primary">Quản Lý POI</a>
+                    <a href="@Url.Action("Create", "Owner")" class="btn btn-success">➕ Thêm Quán Mới</a>
+                    <a href="@Url.Action("Profile", "Owner")" class="btn btn-info">👤 Hồ Sơ Của Tôi</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trạng thái tài khoản -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">📊 Trạng Thái Tài Khoản</h5>
+                </div>
+                <div class="card-body">
+                    <p>Xem trang thái duyệt tài khoản và các thông tin liên quan.</p>
+                    <div id="account-status" class="alert alert-warning" role="alert">
+                        ⏳ Đang tải trạng thái...
+                    </div>
+                    <a href="@Url.Action("Profile", "Owner")" class="btn btn-info">Xem Hồ Sơ</a>
+                    <button class="btn btn-secondary" onclick="checkAccountStatus()">🔄 Kiểm Tra Lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <div class="row mt-4">
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3>📍</h3>
+                    <h5>Chọn Vị Trí Trên Bản Đồ</h5>
+                    <p class="text-muted small">Sử dụng bản đồ tương tác để chọn vị trí chính xác của quán ăn.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3>⏳</h3>
+                    <h5>Chờ Duyệt Admin</h5>
+                    <p class="text-muted small">Admin sẽ kiểm tra và duyệt các thông tin đăng ký của bạn.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3>✅</h3>
+                    <h5>Công Khai Quán</h5>
+                    <p class="text-muted small">Sau khi duyệt, quán ăn sẽ hiển thị trên ứng dụng di động.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <a href="/Account/Logout" class="btn btn-danger">Đăng Xuất</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:5020/api';
+    const userId = @userId;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (userId > 0) {
+            checkAccountStatus();
+        }
+    });
+
+    function checkAccountStatus() {
+        fetch(`${API_URL}/owner/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('account-status');
+                let statusHTML = '';
+
+                if (data.status === 'Pending') {
+                    statusHTML = `
+                        <div class="alert alert-warning" role="alert">
+                            <strong>⏳ Tài khoản đang chờ duyệt</strong><br>
+                            Admin đang kiểm tra thông tin của bạn. Vui lòng chờ trong vài ngày làm việc.
+                        </div>
+                    `;
+                } else if (data.status === 'Approved') {
+                    statusHTML = `
+                        <div class="alert alert-success" role="alert">
+                            <strong>✅ Tài khoản đã được phê duyệt</strong><br>
+                            Bạn đã có thể sử dụng tất cả các tính năng. Ngày duyệt: ${new Date(data.approvedDate).toLocaleDateString('vi-VN')}
+                        </div>
+                    `;
+                } else if (data.status === 'Rejected') {
+                    statusHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            <strong>❌ Tài khoản bị từ chối</strong><br>
+                            Lý do: ${data.rejectionReason}<br>
+                            Vui lòng liên hệ với Admin để biết thêm chi tiết.
+                        </div>
+                    `;
+                }
+
+                statusDiv.innerHTML = statusHTML;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('account-status').innerHTML = '❌ Không thể tải trạng thái tài khoản.';
+            });
+    }
+</script>
+
+<style>
+    .card {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .card-header {
+        border-bottom: 2px solid rgba(0,0,0,0.1);
+    }
+</style>

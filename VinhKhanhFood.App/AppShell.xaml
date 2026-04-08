@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="VinhKhanhFood.App.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:VinhKhanhFood.App"
+    Shell.FlyoutBehavior="Disabled"
+    Shell.NavBarIsVisible="False"
+    TabBarBackgroundColor="#1A1A1A"
+    TabBarTitleColor="#C41E3A"
+    TabBarUnselectedColor="#808080">
+
+    <TabBar>
+        <Tab Title="Map" Icon="map_icon.png">
+            <ShellContent ContentTemplate="{DataTemplate local:MainPage}" />
+        </Tab>
+
+        <Tab Title="Explore" Icon="explore_icon.png">
+            <ShellContent ContentTemplate="{DataTemplate local:ExplorePage}" />
+        </Tab>
+
+        <Tab Title="Settings" Icon="settings_icon.png">
+            <ShellContent ContentTemplate="{DataTemplate local:SettingsPage}" />
+        </Tab>
+    </TabBar>
+
+</Shell>

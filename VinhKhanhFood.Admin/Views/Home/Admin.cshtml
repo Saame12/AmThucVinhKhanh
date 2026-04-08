@@ -1,0 +1,118 @@
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="container-fluid mt-4">
+    <h1>👨‍💼 Admin Dashboard</h1>
+    <hr />
+
+    <!-- Statistics -->
+    <div class="row mb-4" id="statistics">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 id="pending-owners-count">0</h3>
+                    <p class="text-muted">Chủ Hàng Chờ Duyệt</p>
+                    <a href="@Url.Action("PendingOwners", "Home")" class="btn btn-sm btn-warning">Xem</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 id="approved-owners-count">0</h3>
+                    <p class="text-muted">Chủ Hàng Đã Duyệt</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 id="pending-poi-count">0</h3>
+                    <p class="text-muted">POI Chờ Duyệt</p>
+                    <a href="@Url.Action("PendingApprovals", "FoodLocation")" class="btn btn-sm btn-warning">Xem</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 id="approved-poi-count">0</h3>
+                    <p class="text-muted">POI Đã Duyệt</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">👥 Quản Lý Owner</h5>
+                </div>
+                <div class="card-body">
+                    <p>Duyệt hoặc từ chối đơn đăng ký từ các chủ nhà hàng</p>
+                    <a href="@Url.Action("PendingOwners", "Home")" class="btn btn-primary">Đi Tới</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🍴 Quản Lý POI</h5>
+                </div>
+                <div class="card-body">
+                    <p>Duyệt hoặc từ chối các quán ăn được thêm bởi owner</p>
+                    <a href="@Url.Action("PendingApprovals", "FoodLocation")" class="btn btn-success">Đi Tới</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <!-- Logout -->
+    <div class="row">
+        <div class="col-md-12">
+            <a href="/Account/Logout" class="btn btn-danger">Đăng Xuất</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:5020/api';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStatistics();
+    });
+
+    function loadStatistics() {
+        fetch(`${API_URL}/admin/statistics`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('pending-owners-count').textContent = data.pendingOwners;
+                document.getElementById('approved-owners-count').textContent = data.approvedOwners;
+                document.getElementById('pending-poi-count').textContent = data.pendingFoodLocations;
+                document.getElementById('approved-poi-count').textContent = data.approvedFoodLocations;
+            });
+    }
+</script>
+
+<style>
+    .card {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: none;
+        margin-bottom: 20px;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.2s;
+    }
+
+    h1 {
+        color: #333;
+    }
+</style>

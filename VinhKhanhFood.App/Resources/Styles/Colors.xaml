@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Vietnamese Food App - Fresh Light Theme -->
+    <!-- Primary: Warm Orange - appetizing, warm & welcoming -->
+    <Color x:Key="Primary">#FF9800</Color>
+    <Color x:Key="PrimaryLight">#FFB74D</Color>
+    <Color x:Key="PrimaryDark">#F57C00</Color>
+
+    <!-- Secondary: Fresh Green - health, freshness, quality -->
+    <Color x:Key="Secondary">#4CAF50</Color>
+    <Color x:Key="SecondaryLight">#81C784</Color>
+    <Color x:Key="SecondaryDark">#388E3C</Color>
+
+    <!-- Accent: Teal - modern, trustworthy -->
+    <Color x:Key="AccentTeal">#00897B</Color>
+    <Color x:Key="AccentTealLight">#26A69A</Color>
+
+    <!-- Backgrounds - Light, Clean Theme -->
+    <Color x:Key="BackgroundPrimary">#FFFFFF</Color>
+    <Color x:Key="BackgroundSecondary">#F9F9F9</Color>
+    <Color x:Key="SurfaceCard">#FFFFFF</Color>
+    <Color x:Key="SurfaceLight">#F5F5F5</Color>
+
+    <!-- Text Colors - Dark Text on Light Background -->
+    <Color x:Key="TextPrimary">#212121</Color>
+    <Color x:Key="TextSecondary">#757575</Color>
+    <Color x:Key="TextTertiary">#BDBDBD</Color>
+
+    <!-- Border & Divider -->
+    <Color x:Key="Divider">#E0E0E0</Color>
+    <Color x:Key="Border">#EEEEEE</Color>
+
+    <!-- Status Colors -->
+    <Color x:Key="Success">#4CAF50</Color>
+    <Color x:Key="Warning">#FF9800</Color>
+    <Color x:Key="Error">#F44336</Color>
+    <Color x:Key="Info">#2196F3</Color>
+
+    <!-- Gray Scale -->
+    <Color x:Key="White">White</Color>
+    <Color x:Key="Black">#212121</Color>
+    <Color x:Key="Gray100">#F5F5F5</Color>
+    <Color x:Key="Gray200">#EEEEEE</Color>
+    <Color x:Key="Gray300">#E0E0E0</Color>
+    <Color x:Key="Gray400">#BDBDBD</Color>
+    <Color x:Key="Gray500">#9E9E9E</Color>
+    <Color x:Key="Gray600">#757575</Color>
+    <Color x:Key="Gray900">#212121</Color>
+
+    <!-- Additional Colors for Compatibility -->
+    <Color x:Key="PrimaryDarkText">#212121</Color>
+    <Color x:Key="SecondaryDarkText">#757575</Color>
+    <Color x:Key="MidnightBlue">#1565C0</Color>
+    <Color x:Key="OffBlack">#F9F9F9</Color>
+    <Color x:Key="Magenta">#FF9800</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentTeal}"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceCard}"/>
+</ResourceDictionary>

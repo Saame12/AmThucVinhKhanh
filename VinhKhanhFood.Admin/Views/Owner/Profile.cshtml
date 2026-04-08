@@ -1,0 +1,152 @@
+@{
+    ViewData["Title"] = "Hồ Sơ Của Tôi";
+    var userId = Context.Session.GetInt32("UserId") ?? 0;
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2>👤 Hồ Sơ Của Tôi</h2>
+            <hr />
+
+            <div id="profileContent" class="spinner-border" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:5020/api';
+    const userId = @userId;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (userId <= 0) {
+            document.getElementById('profileContent').innerHTML = '<div class="alert alert-danger">Vui lòng đăng nhập</div>';
+            return;
+        }
+
+        fetch(`${API_URL}/owner/${userId}`)
+            .then(response => response.json())
+            .then(owner => {
+                const html = `
+                    <form id="profileForm" onsubmit="saveProfile(event)">
+                        <div class="card mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">📝 Thông Tin Cá Nhân</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Họ và Tên</label>
+                                        <input type="text" id="fullName" class="form-control" value="${owner.fullName}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" id="email" class="form-control" value="${owner.email}">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Số Điện Thoại</label>
+                                        <input type="tel" id="phoneNumber" class="form-control" value="${owner.phoneNumber}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">CMND/CCCD</label>
+                                        <input type="text" id="identificationNumber" class="form-control" value="${owner.identificationNumber || ''}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">🏪 Thông Tin Quán</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Tên Quán</label>
+                                    <input type="text" id="businessName" class="form-control" value="${owner.businessName}">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Mô Tả</label>
+                                    <textarea id="businessDescription" class="form-control" rows="3">${owner.businessDescription || ''}</textarea>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Địa Chỉ</label>
+                                    <input type="text" id="address" class="form-control" value="${owner.address || ''}">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Mã Số Thuế</label>
+                                    <input type="text" id="taxNumber" class="form-control" value="${owner.taxNumber || ''}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">📊 Trạng Thái</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Trạng thái tài khoản:</strong> ${getStatusBadge(owner.status)}</p>
+                                <p><strong>Ngày đăng ký:</strong> ${new Date(owner.registrationDate).toLocaleDateString('vi-VN')}</p>
+                                ${owner.approvedDate ? `<p><strong>Ngày duyệt:</strong> ${new Date(owner.approvedDate).toLocaleDateString('vi-VN')}</p>` : ''}
+                                ${owner.rejectionReason ? `<p><strong style="color: red;">Lý do từ chối:</strong> ${owner.rejectionReason}</p>` : ''}
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">💾 Lưu Thay Đổi</button>
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-secondary btn-lg">← Quay Lại</a>
+                    </form>
+                `;
+                document.getElementById('profileContent').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('profileContent').innerHTML = '<div class="alert alert-danger">❌ Không thể tải hồ sơ</div>';
+            });
+    });
+
+    function getStatusBadge(status) {
+        switch(status) {
+            case 'Approved':
+                return '<span class="badge bg-success">✅ Đã Duyệt</span>';
+            case 'Pending':
+                return '<span class="badge bg-warning">⏳ Chờ Duyệt</span>';
+            case 'Rejected':
+                return '<span class="badge bg-danger">❌ Từ Chối</span>';
+            default:
+                return '<span class="badge bg-secondary">?</span>';
+        }
+    }
+
+    function saveProfile(event) {
+        event.preventDefault();
+
+        const updateData = {
+            email: document.getElementById('email').value,
+            phoneNumber: document.getElementById('phoneNumber').value,
+            fullName: document.getElementById('fullName').value,
+            businessName: document.getElementById('businessName').value,
+            businessDescription: document.getElementById('businessDescription').value,
+            address: document.getElementById('address').value
+        };
+
+        fetch(`${API_URL}/owner/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('✅ Lưu thành công!');
+            } else {
+                alert('❌ Lưu thất bại!');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra!');
+        });
+    }
+</script>

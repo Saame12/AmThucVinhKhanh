@@ -1,0 +1,168 @@
+@{
+    ViewData["Title"] = "Danh Sách Quán Của Tôi";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>🏪 Danh Sách Quán Của Tôi</h2>
+            <a href="@Url.Action("Create", "Owner")" class="btn btn-success">➕ Thêm Quán Mới</a>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">← Quay Lại</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div id="foodLocations" class="row">
+                <div class="col-md-12 text-center">
+                    <p class="text-muted">Đang tải dữ liệu...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:5020/api';
+    const userId = @(Context.Session.GetInt32("UserId") ?? 0);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadFoodLocations();
+    });
+
+    function loadFoodLocations() {
+        if (userId <= 0) {
+            document.getElementById('foodLocations').innerHTML = '<div class="col-md-12"><div class="alert alert-danger">Vui lòng đăng nhập để xem quán của bạn</div></div>';
+            return;
+        }
+
+        fetch(`${API_URL}/owner/${userId}/foodlocations`)
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('foodLocations');
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                Bạn chưa có quán ăn nào. 
+                                <a href="@Url.Action("Create", "Owner")" class="alert-link">Thêm quán mới</a>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                data.forEach(location => {
+                    const statusBadge = getStatusBadge(location.status);
+                    const statusColor = location.status === 'Approved' ? 'success' : 
+                                       location.status === 'Pending' ? 'warning' : 'danger';
+                    
+                    html += `
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-${statusColor} text-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">${location.name}</h5>
+                                    ${statusBadge}
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>📝 Mô Tả:</strong> ${location.description || 'N/A'}</p>
+                                    ${location.description ? `
+                                        <button class="btn btn-sm btn-outline-info" onclick="speak('${location.description.replace(/'/g, "\\'")}', 'vi')">
+                                            🔊 Nghe VN
+                                        </button>
+                                    ` : ''}
+                                    <p><strong>📍 Vị Trí:</strong> ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}</p>
+                                    <p><strong>📅 Ngày Đăng:</strong> ${new Date(location.createdDate).toLocaleDateString('vi-VN')}</p>
+                                    ${location.approvedDate ? `<p><strong>✅ Ngày Duyệt:</strong> ${new Date(location.approvedDate).toLocaleDateString('vi-VN')}</p>` : ''}
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-sm btn-info" onclick="viewDetails(${location.id})">👁️ Chi Tiết</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteLocation(${location.id})">🗑️ Xóa</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('foodLocations').innerHTML = `
+                    <div class="col-md-12">
+                        <div class="alert alert-danger">❌ Không thể tải danh sách quán</div>
+                    </div>
+                `;
+            });
+    }
+
+    function getStatusBadge(status) {
+        switch(status) {
+            case 'Approved':
+                return '<span class="badge bg-success">✅ Đã Duyệt</span>';
+            case 'Pending':
+                return '<span class="badge bg-warning">⏳ Chờ Duyệt</span>';
+            case 'Rejected':
+                return '<span class="badge bg-danger">❌ Từ Chối</span>';
+            default:
+                return '<span class="badge bg-secondary">Không Xác Định</span>';
+        }
+    }
+
+    function viewDetails(id) {
+        alert('Chi tiết quán ' + id + '\n\n(Tính năng sẽ được thêm sớm)');
+    }
+
+    function deleteLocation(id) {
+        if (!confirm('Bạn chắc chắn muốn xóa quán này?')) return;
+
+        fetch(`${API_URL}/food/${id}`, { method: 'DELETE' })
+            .then(response => {
+                if (response.ok) {
+                    alert('✅ Xóa thành công!');
+                    loadFoodLocations();
+                } else {
+                    alert('❌ Xóa thất bại!');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra!');
+            });
+    }
+
+    // 🔊 Text-to-Speech using Web Speech API
+    function speak(text, lang = 'vi') {
+        if (!text) return;
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang === 'en' ? 'en-US' : lang === 'zh' ? 'zh-CN' : 'vi-VN';
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+
+        speechSynthesis.speak(utterance);
+    }
+</script>
+
+<style>
+    .card {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .card-header {
+        border-radius: 0;
+    }
+
+    .btn-sm {
+        font-size: 12px;
+    }
+</style>
