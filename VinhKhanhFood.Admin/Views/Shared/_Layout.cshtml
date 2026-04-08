@@ -27,30 +27,31 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy"><loc key="Privacy" /></a>
                         </li>
                     </ul>
-                    <ul class="navbar-nav">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                🌐 @VinhKhanhFood.Admin.Services.LocalizationService.CurrentLanguage.ToUpper()
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Home" asp-action="SetLanguage" asp-route-lang="vi">
-                                        Tiếng Việt
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Home" asp-action="SetLanguage" asp-route-lang="en">
-                                        English
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Home" asp-action="SetLanguage" asp-route-lang="zh">
-                                        中文
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
+                    <ul class="navbar-nav flex-grow-1">
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">
+            🏠 <loc key="Home" />
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-controller="Poi" asp-action="Index">
+            📍 <loc key="Manage POI" />
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-controller="Translation" asp-action="Index">
+            🌍 <loc key="Translations & Audio" />
+        </a>
+    </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle text-dark" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+            ⚙️ <loc key="System" />
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" asp-controller="User" asp-action="Index">👥 <loc key="Users" /></a></li>
+        </ul>
+    </li>
+</ul>
                 </div>
             </div>
         </nav>
