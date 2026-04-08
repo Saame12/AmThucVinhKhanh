@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - VinhKhanhFood.Admin</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - VinhKhanhFood Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/VinhKhanhFood.Admin.styles.css" asp-append-version="true" />
@@ -13,49 +13,56 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">VinhKhanhFood.Admin</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <a class="navbar-brand fw-bold text-primary" asp-area="" asp-controller="Home" asp-action="Index">🍽️ VinhKhanhFood.Admin</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index"><loc key="Home" /></a>
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house-door"></i> <loc key="Home" />
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy"><loc key="Privacy" /></a>
+                            <a class="nav-link text-dark" asp-controller="Poi" asp-action="Index">
+                                <i class="bi bi-geo-alt"></i> <loc key="Manage POI" />
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="History" asp-action="Index">
+                                <i class="bi bi-clock-history"></i> <loc key="Usage History" />
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" id="adminDropdown" data-bs-toggle="dropdown">
+                                <i class="bi bi-gear"></i> <loc key="System" />
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="User" asp-action="Index"><i class="bi bi-people"></i> <loc key="Users" /></a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" asp-controller="Home" asp-action="Privacy"><i class="bi bi-shield-lock"></i> <loc key="Privacy" /></a></li>
+                            </ul>
                         </li>
                     </ul>
-                    <ul class="navbar-nav flex-grow-1">
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">
-            🏠 <loc key="Home" />
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Poi" asp-action="Index">
-            📍 <loc key="Manage POI" />
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Translation" asp-action="Index">
-            🌍 <loc key="Translations & Audio" />
-        </a>
-    </li>
-    <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle text-dark" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
-            ⚙️ <loc key="System" />
-        </a>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" asp-controller="User" asp-action="Index">👥 <loc key="Users" /></a></li>
-        </ul>
-    </li>
-</ul>
+
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-primary" href="#" id="langDrop" data-bs-toggle="dropdown">
+                                🌐 @VinhKhanhFood.Admin.Services.LocalizationService.CurrentLanguage.ToUpper()
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" asp-controller="Home" asp-action="SetLanguage" asp-route-lang="vi">Tiếng Việt</a></li>
+                                <li><a class="dropdown-item" asp-controller="Home" asp-action="SetLanguage" asp-route-lang="en">English</a></li>
+                                <li><a class="dropdown-item" asp-controller="Home" asp-action="SetLanguage" asp-route-lang="zh">中文</a></li>
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -63,10 +70,11 @@
     </div>
 
     <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - VinhKhanhFood.Admin - <a asp-area="" asp-controller="Home" asp-action="Privacy"><loc key="Privacy" /></a>
+        <div class="container text-center">
+            &copy; 2026 - VinhKhanhFood.Admin - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
