@@ -26,11 +26,5 @@
 
             // Thông tin quản lý (Phân quyền Vendor)
             public int? OwnerId { get; set; }
-            public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected
-            public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-            public DateTime? ApprovedDate { get; set; }
-
-            // Relationship
-            public Owner? Owner { get; set; }
         }
     }

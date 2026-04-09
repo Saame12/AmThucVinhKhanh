@@ -72,11 +72,33 @@
                 <Border StrokeShape="RoundRectangle 16" BackgroundColor="{StaticResource SurfaceLight}" StrokeThickness="0" Padding="20">
                     <VerticalStackLayout Spacing="15">
                         <Label Text="About &amp; Account" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+
+                        <Grid IsVisible="{Binding IsLoggedIn}" ColumnDefinitions="Auto, *, Auto" ColumnSpacing="15">
+                            <Border WidthRequest="45" HeightRequest="45" StrokeShape="RoundRectangle 22" StrokeThickness="0">
+                                <Image Source="user_avatar.png" Aspect="AspectFill" />
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                <Label Text="{Binding CurrentUserName}" FontAttributes="Bold" FontSize="15" TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{Binding CurrentUserRole}" FontSize="12" TextColor="{StaticResource Primary}" />
+                            </VerticalStackLayout>
+                            <Button Grid.Column="2" Text="Logout" Clicked="OnLogoutClicked" TextColor="Red" BackgroundColor="Transparent" FontSize="12" />
+                        </Grid>
+
+                        <Button IsVisible="{Binding IsNotLoggedIn}" 
+                Text="Login to Your Account" 
+                Clicked="OnLoginClicked"
+                BackgroundColor="{StaticResource Primary}" 
+                TextColor="White" 
+                FontAttributes="Bold" 
+                CornerRadius="10" 
+                HeightRequest="45" />
+
+                        <BoxView HeightRequest="1" Color="{StaticResource Divider}" />
+
                         <HorizontalStackLayout Spacing="10">
                             <Label Text="Version Info:" TextColor="{StaticResource TextSecondary}" />
                             <Label Text="v1.0.0 - MVP Release" TextColor="{StaticResource TextPrimary}" FontAttributes="Bold" />
                         </HorizontalStackLayout>
-                        <Button Text="Admin Login" BackgroundColor="{StaticResource Primary}" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="45" Margin="0,10,0,0"/>
                     </VerticalStackLayout>
                 </Border>
 

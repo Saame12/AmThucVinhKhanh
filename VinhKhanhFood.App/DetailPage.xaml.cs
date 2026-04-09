@@ -1,16 +1,13 @@
 ﻿using Microsoft.Maui.ApplicationModel;
-using Microsoft.Maui.ApplicationModel.Communication;
+using Microsoft.Maui.ApplicationModel.Communication; // Thư viện để gọi điện thoại
 using Microsoft.Maui.Media;
 using VinhKhanhFood.App.Models;
-using VinhKhanhFood.App.Services;
-using VinhKhanhFood.App.ViewModels;
 
 namespace VinhKhanhFood.App;
 
 public partial class DetailPage : ContentPage
 {
     private readonly FoodLocation _currentLocation;
-    private readonly AudioService _audioService;
     private bool _isPlaying = false;
     private CancellationTokenSource _cts;
 
@@ -18,7 +15,6 @@ public partial class DetailPage : ContentPage
     {
         InitializeComponent();
         _currentLocation = location;
-        _audioService = new AudioService();
         BindingContext = _currentLocation;
     }
 
@@ -34,41 +30,6 @@ public partial class DetailPage : ContentPage
         await Navigation.PopAsync();
     }
 
-    /// <summary>
-    /// Play audio button clicked
-    /// Logic: Nếu có AudioUrl → phát, không có → dùng TTS
-    /// </summary>
-    private async void OnPlayAudioClicked(object sender, EventArgs e)
-    {
-        try
-        {
-            if (_isPlaying)
-            {
-                StopAudio();
-                return;
-            }
-
-            _isPlaying = true;
-            _cts = new CancellationTokenSource();
-
-            // Gọi AudioService để handle tự động
-            await _audioService.PlayAudioAsync(
-                _currentLocation.DisplayAudioUrl,
-                _currentLocation.DisplayText,
-                _currentLocation.LanguageCode
-            );
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Error playing audio: {ex.Message}");
-            await DisplayAlert("Lỗi", $"Không thể phát âm thanh: {ex.Message}", "OK");
-        }
-        finally
-        {
-            _isPlaying = false;
-        }
-    }
-
     private async void OnGetDirectionsClicked(object sender, EventArgs e)
     {
         try
@@ -77,6 +38,7 @@ public partial class DetailPage : ContentPage
             // Sử dụng DisplayName để hiển thị đúng ngôn ngữ trên bản đồ
             var options = new MapLaunchOptions { Name = _currentLocation.DisplayName };
             await Map.Default.OpenAsync(location, options);
+        }
         catch (Exception)
         {
             await DisplayAlert("Error", "Could not open maps.", "OK");

@@ -21,14 +21,6 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Seed database with sample data
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<VinhKhanhFood.API.Data.AppDbContext>();
-    context.Database.EnsureCreated();
-    VinhKhanhFood.API.Data.DatabaseSeeder.SeedDatabase(context);
-}
-
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

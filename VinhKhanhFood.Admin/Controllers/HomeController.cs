@@ -16,33 +16,6 @@ namespace VinhKhanhFood.Admin.Controllers
 
         public IActionResult Index()
         {
-            // Check if user is logged in
-            var userRole = HttpContext.Session.GetString("UserRole");
-
-            if (string.IsNullOrEmpty(userRole))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Route to appropriate dashboard
-            if (userRole == "Admin")
-            {
-                return View("Admin");
-            }
-            else if (userRole == "Owner")
-            {
-                return View("../Owner/Index");
-            }
-
-            return RedirectToAction("Login", "Account");
-        }
-
-        public IActionResult PendingOwners()
-        {
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
-                return RedirectToAction("Index");
-
             return View();
         }
 

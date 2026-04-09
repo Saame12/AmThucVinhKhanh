@@ -1,23 +1,23 @@
-var builder = WebApplication.CreateBuilder(args);
+Ôªøvar builder = WebApplication.CreateBuilder(args);
 
-// 1. –„ng k? HttpClient ? Admin cÛ th? g?i sang API
+// 1. √ê√£ng k? HttpClient √∞? Admin c√≥ th? g?i sang API
 builder.Services.AddHttpClient("MyAPI", client =>
 {
-    // (nh?n trÍn tr?nh duy?t l˙c ch?y Scalar)
+    // (nh?n tr√™n tr?nh duy?t l√∫c ch?y Scalar)
     client.BaseAddress = new Uri("http://localhost:5020/api/");
 });
 
-// 2. ThÍm Session ? l˝u tr?ng th·i „ng nh?p (? bi?t ai l‡ Admin, ai l‡ Vendor)
+// 2. Th√™m Session √∞? l√Ωu tr?ng th√°i √∞√£ng nh?p (√∞? bi?t ai l√† Admin, ai l√† Vendor)
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Sau 30p khÙng l‡m g? s? t? „ng xu?t
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Sau 30p kh√¥ng l√†m g? s? t? √∞√£ng xu?t
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
+builder.Services.AddHttpContextAccessor(); // Th√™m d√≤ng n√†y v√†o tr∆∞·ªõc builder.Build()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -31,7 +31,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-// 3. KÌch ho?t Session (? TR›?C UseAuthorization)
+// 3. K√≠ch ho?t Session (√∞? TR√ù?C UseAuthorization)
 app.UseSession();
 
 app.UseAuthorization();

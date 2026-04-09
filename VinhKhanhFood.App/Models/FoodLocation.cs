@@ -58,21 +58,5 @@ namespace VinhKhanhFood.App.Models
             "zh" => !string.IsNullOrWhiteSpace(AudioUrl_ZH) ? AudioUrl_ZH : AudioUrl,
             _ => AudioUrl
         };
-
-        // Chọn text để dùng làm fallback cho TTS
-        public string DisplayText => App.CurrentLanguage switch
-        {
-            "en" => !string.IsNullOrWhiteSpace(Description_EN) ? Description_EN : Description,
-            "zh" => !string.IsNullOrWhiteSpace(Description_ZH) ? Description_ZH : Description,
-            _ => Description
-        };
-
-        // Lấy language code
-        public string LanguageCode => App.CurrentLanguage switch
-        {
-            "en" => "en",
-            "zh" => "zh",
-            _ => "vi"
-        };
     }
 }
