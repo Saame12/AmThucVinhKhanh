@@ -1,0 +1,116 @@
+﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+             x:Class="VinhKhanhFood.App.MainPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource BackgroundPrimary}">
+
+    <Grid>
+        <maps:Map x:Name="vinhKhanhMap" IsShowingUser="False" MapType="Street" />
+
+        <!-- Location Control (Bottom Right) -->
+        <Button x:Name="LocationButton"
+                VerticalOptions="End"
+                HorizontalOptions="End"
+                Margin="0,0,16,120"
+                Text="📍"
+                FontSize="18"
+                TextColor="White"
+                BackgroundColor="{StaticResource Primary}"
+                CornerRadius="24"
+                WidthRequest="48"
+                HeightRequest="48"
+                Padding="0"
+                Shadow="Offset: 0, 2, Blur: 8, Color: #00000040"
+                Clicked="OnCurrentLocationClicked" />
+
+        <!-- Top Header with Search -->
+        <VerticalStackLayout VerticalOptions="Start" Padding="0,40,0,0" InputTransparent="True" Spacing="0">
+            <!-- Title Section -->
+            <Border BackgroundColor="{StaticResource BackgroundSecondary}" StrokeShape="RoundRectangle 0,0,20,20" StrokeThickness="0" Margin="0" Padding="20,15,20,20">
+                <VerticalStackLayout Spacing="8">
+                    <HorizontalStackLayout>
+                        <Label Text="🍜 " FontSize="20" />
+                        <Label Text="Discover " FontSize="24" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="Vinh Khanh" FontSize="24" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
+                    </HorizontalStackLayout>
+                    <Label Text="Find amazing local food experiences near you" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Search Bar -->
+            <Border StrokeShape="RoundRectangle 12" BackgroundColor="{StaticResource SurfaceLight}" Stroke="{StaticResource Divider}" StrokeThickness="1" Margin="15,15,15,12" Padding="12,8" InputTransparent="False">
+                <Grid ColumnDefinitions="Auto, *">
+                    <Label Grid.Column="0" Text="🔍" FontSize="16" VerticalOptions="Center" Margin="5,0,0,0"/>
+                    <Entry Grid.Column="1" Placeholder="Search places..." TextColor="{StaticResource TextPrimary}" PlaceholderColor="{StaticResource TextTertiary}" BackgroundColor="Transparent" Margin="8,0"/>
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+
+        <!-- Bottom Sheet (Food Details) -->
+        <Border x:Name="FoodBottomSheet" 
+                BackgroundColor="{StaticResource BackgroundPrimary}" 
+                StrokeShape="RoundRectangle 24,24,0,0" 
+                VerticalOptions="End" 
+                IsVisible="False" 
+                StrokeThickness="0"
+                Shadow="Offset: 0,-5, Blur: 20, Color: #00000040">
+            <VerticalStackLayout Spacing="16" Padding="20,16">
+
+                <!-- Drag Handle -->
+                <Border StrokeShape="RoundRectangle 2" BackgroundColor="{StaticResource Gray400}" WidthRequest="40" HeightRequest="4" HorizontalOptions="Center" StrokeThickness="0"/>
+
+                <!-- Content Grid -->
+                <Grid ColumnDefinitions="110, *" ColumnSpacing="12">
+                    <!-- Image -->
+                    <Border Grid.Column="0" StrokeShape="RoundRectangle 12" StrokeThickness="0" WidthRequest="110" HeightRequest="110" Shadow="Offset: 0, 4, Blur: 8, Color: #00000030">
+                        <Image Source="{Binding ImageUrl}" Aspect="AspectFill"/>
+                    </Border>
+
+                    <!-- Info Section -->
+                    <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                        <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+
+                        <!-- Rating -->
+                        <HorizontalStackLayout Spacing="6">
+                            <Label Text="⭐" FontSize="13" />
+                            <Label Text="4.8" TextColor="{StaticResource Primary}" FontSize="13" FontAttributes="Bold"/>
+                            <Label Text="•" TextColor="{StaticResource TextTertiary}" />
+                            <Label Text="150m away" TextColor="{StaticResource TextSecondary}" FontSize="12" />
+                        </HorizontalStackLayout>
+
+                        <!-- Description -->
+                        <Label Text="{Binding Description}" TextColor="{StaticResource TextSecondary}" FontSize="13" MaxLines="2" LineBreakMode="TailTruncation" Margin="0,4,0,0"/>
+                    </VerticalStackLayout>
+
+                    <!-- Close Button -->
+                    <Button Grid.Column="1"
+                            Text="✕"
+                            HorizontalOptions="End"
+                            VerticalOptions="Start"
+                            WidthRequest="32"
+                            HeightRequest="32"
+                            CornerRadius="16"
+                            Padding="0"
+                            FontSize="14"
+                            FontAttributes="Bold"
+                            TextColor="{StaticResource TextSecondary}"
+                            BackgroundColor="{StaticResource SurfaceLight}"
+                            Clicked="OnCloseBottomSheetClicked"/>
+                </Grid>
+
+                <!-- Action Button -->
+                <Button Text="📍 View Details" 
+                        BackgroundColor="{StaticResource Primary}" 
+                        TextColor="White" 
+                        CornerRadius="10" 
+                        HeightRequest="48" 
+                        FontAttributes="Bold" 
+                        FontSize="15"
+                        Margin="0,8,0,0"
+                        Clicked="OnViewDetailsClicked"/>
+            </VerticalStackLayout>
+        </Border>
+
+    </Grid>
+</ContentPage>

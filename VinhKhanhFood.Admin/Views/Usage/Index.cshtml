@@ -1,0 +1,40 @@
+﻿@model List<VinhKhanhFood.Admin.Models.UsageHistory>
+
+<h2>📊 Usage History</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Action</th>
+            <th>POI</th>
+            <th>Time</th>
+            <th>Role</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.UserName (@item.UserId)</td>
+                <td>
+                    @if (item.Action == "CREATE")
+                    {
+                        <span class="badge bg-success">CREATE</span>
+                    }
+                    else if (item.Action == "EDIT")
+                    {
+                        <span class="badge bg-warning">EDIT</span>
+                    }
+                    else if (item.Action == "DELETE")
+                    {
+                        <span class="badge bg-danger">DELETE</span>
+                    }
+                </td>
+                <td>@item.Role</td>
+                <td>@item.PoiName</td>
+                <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+            </tr>
+        }
+    </tbody>
+</table>
