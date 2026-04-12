@@ -6,14 +6,14 @@ public class UsageHistory
 
     // 🔥 Ai thực hiện
     public int UserId { get; set; }
-    public string UserName { get; set; }
+    public string UserName { get; set; } = string.Empty;
 
     // 🔥 Hành động
     public string Action { get; set; } = string.Empty;
 
     // 🔥 POI liên quan
     public int PoiId { get; set; }
-    public string PoiName { get; set; }
+    public string PoiName { get; set; } = string.Empty;
 
     // 🔥 Thời gian
     public DateTime CreatedAt { get; set; } = DateTime.Now;

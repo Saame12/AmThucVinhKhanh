@@ -1,45 +1,43 @@
-﻿namespace VinhKhanhFood.App
+using VinhKhanhFood.App.Services;
+
+namespace VinhKhanhFood.App;
+
+public partial class AppShell : Shell
 {
-    public partial class AppShell : Shell
+    public AppShell()
     {
-        public AppShell()
+        InitializeComponent();
+        UpdateTabTitles();
+        LocalizationService.LanguageChanged += OnLanguageChanged;
+    }
+
+    protected override void OnHandlerChanged()
+    {
+        base.OnHandlerChanged();
+
+        if (Handler is null)
         {
-            InitializeComponent();
-        }
-
-        protected override void OnAppearing()
-        {
-            base.OnAppearing();
-
-            // Subscribe vào event LanguageChanged
-            Services.LocalizationService.LanguageChanged += OnLanguageChanged;
-
-            // Cập nhật tab titles khi app khởi động
-            UpdateTabTitles();
-        }
-
-        protected override void OnDisappearing()
-        {
-            base.OnDisappearing();
-
-            // Unsubscribe từ event khi app tắt
-            Services.LocalizationService.LanguageChanged -= OnLanguageChanged;
-        }
-
-        private void OnLanguageChanged(object? sender, Services.LanguageChangedEventArgs e)
-        {
-            // Cập nhật tab titles khi ngôn ngữ thay đổi
-            UpdateTabTitles();
-        }
-
-        private void UpdateTabTitles()
-        {
-            if (Items.Count >= 3)
-            {
-                Items[0].Title = Services.LocalizationService.GetString("Map");
-                Items[1].Title = Services.LocalizationService.GetString("Explore");
-                Items[2].Title = Services.LocalizationService.GetString("Settings");
-            }
+            LocalizationService.LanguageChanged -= OnLanguageChanged;
         }
     }
+
+    private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(UpdateTabTitles);
+    }
+
+    private void UpdateTabTitles()
+    {
+        MapTab.Title = LocalizationService.GetString("Map");
+        ExploreTab.Title = LocalizationService.GetString("Explore");
+        ScanTab.Title = GetScanTabTitle();
+        SettingsTab.Title = LocalizationService.GetString("Settings");
+    }
+
+    private static string GetScanTabTitle() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "Scan QR",
+        "zh" => "扫码",
+        _ => "Quét QR"
+    };
 }

@@ -1,138 +1,148 @@
-﻿using Microsoft.Maui.ApplicationModel;
-using Microsoft.Maui.ApplicationModel.Communication; // Thư viện để gọi điện thoại
-using Microsoft.Maui.Media;
 using VinhKhanhFood.App.Models;
+using VinhKhanhFood.App.Services;
 
 namespace VinhKhanhFood.App;
 
 public partial class DetailPage : ContentPage
 {
     private readonly FoodLocation _currentLocation;
-    private bool _isPlaying = false;
-    private CancellationTokenSource _cts;
+    private readonly bool _autoPlayAudio;
+    private readonly AudioGuideService _audioGuideService = App.AudioGuide;
 
-    public DetailPage(FoodLocation location)
+    public DetailPage(FoodLocation location, bool autoPlayAudio = false)
     {
         InitializeComponent();
         _currentLocation = location;
+        _autoPlayAudio = autoPlayAudio;
         BindingContext = _currentLocation;
+
+        HeroImage.Source = _currentLocation.ImageUrl;
+        UpdateLocalizedTexts();
+        UpdateContent();
+    }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        LocalizationService.LanguageChanged += OnLanguageChanged;
+        _audioGuideService.StateChanged += OnAudioStateChanged;
+
+        if (_autoPlayAudio)
+        {
+            await PlayCurrentPoiAudioAsync();
+        }
     }
 
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        // Đảm bảo tắt âm thanh khi người dùng thoát trang bằng bất kỳ cách nào
-        StopAudio();
+        LocalizationService.LanguageChanged -= OnLanguageChanged;
+        _audioGuideService.StateChanged -= OnAudioStateChanged;
     }
 
-    private async void OnBackButtonClicked(object sender, EventArgs e)
+    private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateLocalizedTexts();
+            UpdateContent();
+        });
+    }
+
+    private void OnAudioStateChanged(object? sender, AudioGuideStateChangedEventArgs e)
+    {
+        if (e.CurrentPoi?.Id != _currentLocation.Id && e.State == AudioGuidePlaybackState.Playing)
+        {
+            return;
+        }
+
+        MainThread.BeginInvokeOnMainThread(UpdateAudioStateUi);
+    }
+
+    private void UpdateContent()
+    {
+        NameLabel.Text = _currentLocation.DisplayName;
+        DescriptionLabel.Text = _currentLocation.DisplayDescription;
+        UpdateAudioStateUi();
+    }
+
+    private void UpdateLocalizedTexts()
+    {
+        Title = LocalizationService.GetString("Details");
+        AudioSectionTitleLabel.Text = LocalizationService.GetString("Audio Guide");
+        PlayAudioButton.Text = LocalizationService.GetString("Play");
+        CancelAudioButton.Text = LocalizationService.GetString("Cancel");
+        CopyQrButton.Text = GetQrCopyLabel();
+        QrTitleLabel.Text = GetQrTitle();
+        QrInstructionLabel.Text = GetQrInstruction();
+    }
+
+    private void UpdateAudioStateUi()
+    {
+        var isCurrentPoiPlaying = _audioGuideService.CurrentPoi?.Id == _currentLocation.Id && _audioGuideService.IsPlaying;
+        AudioStatusLabel.Text = isCurrentPoiPlaying
+            ? LocalizationService.GetString("AudioPlaying")
+            : LocalizationService.GetString("AudioIdle");
+
+        PlayAudioButton.IsEnabled = !isCurrentPoiPlaying;
+        CancelAudioButton.IsEnabled = _audioGuideService.CurrentPoi?.Id == _currentLocation.Id;
+    }
+
+    private async Task PlayCurrentPoiAudioAsync()
+    {
+        var started = await _audioGuideService.PlayPoiAsync(_currentLocation);
+        if (!started)
+        {
+            await DisplayAlert(LocalizationService.GetString("Info"), LocalizationService.GetString("AudioUnavailable"), LocalizationService.GetString("OK"));
+        }
+    }
+
+    private async void OnPlayAudioClicked(object sender, EventArgs e)
+    {
+        await PlayCurrentPoiAudioAsync();
+    }
+
+    private void OnCancelAudioClicked(object sender, EventArgs e)
+    {
+        _audioGuideService.Cancel();
+    }
+
+    private async void OnCopyQrClicked(object sender, EventArgs e)
+    {
+        await Clipboard.Default.SetTextAsync(_currentLocation.QrAudioUri);
+        await DisplayAlert(LocalizationService.GetString("Info"), GetQrCopiedMessage(), LocalizationService.GetString("OK"));
+    }
+
+    private async void OnBackClicked(object sender, EventArgs e)
     {
         await Navigation.PopAsync();
     }
 
-    private async void OnGetDirectionsClicked(object sender, EventArgs e)
+    private static string GetQrTitle() => LocalizationService.CurrentLanguage switch
     {
-        try
-        {
-            var location = new Location(_currentLocation.Latitude, _currentLocation.Longitude);
-            // Sử dụng DisplayName để hiển thị đúng ngôn ngữ trên bản đồ
-            var options = new MapLaunchOptions { Name = _currentLocation.DisplayName };
-            await Map.Default.OpenAsync(location, options);
-        }
-        catch (Exception)
-        {
-            await DisplayAlert("Error", "Could not open maps.", "OK");
-        }
-    }
+        "en" => "POI QR audio",
+        "zh" => "POI 音频二维码",
+        _ => "Mã QR audio của quán"
+    };
 
-    private void OnCallStoreClicked(object sender, EventArgs e)
+    private static string GetQrInstruction() => LocalizationService.CurrentLanguage switch
     {
-        if (PhoneDialer.Default.IsSupported)
-            PhoneDialer.Default.Open("0904567788");
-        else
-            DisplayAlert("Notification", "Dialer not supported on this device.", "OK");
-    }
+        "en" => "Each venue can use this QR. When scanned, the app opens this POI and starts the audio guide automatically.",
+        "zh" => "每个店铺都可以使用这个二维码。扫描后，应用会打开对应 POI 并自动播放语音介绍。",
+        _ => "Mỗi quán có thể dùng mã QR này. Khi quét, app sẽ mở đúng POI và tự phát phần thuyết minh."
+    };
 
-    // ==========================================
-    // LOGIC THUYẾT MINH (TEXT TO SPEECH)
-    // ==========================================
-
-    private async void OnToggleAudioClicked(object sender, EventArgs e)
+    private static string GetQrCopyLabel() => LocalizationService.CurrentLanguage switch
     {
-        if (_isPlaying) StopAudio();
-        else await PlayAudio();
-    }
+        "en" => "Copy QR link",
+        "zh" => "复制二维码链接",
+        _ => "Sao chép link QR"
+    };
 
-    private async Task PlayAudio()
+    private static string GetQrCopiedMessage() => LocalizationService.CurrentLanguage switch
     {
-        // 1. Lấy nội dung theo ngôn ngữ hiện tại
-        string textToRead = _currentLocation.DisplayDescription;
-
-        if (string.IsNullOrWhiteSpace(textToRead))
-        {
-            string msg = App.CurrentLanguage == "vi" ? "Không có nội dung thuyết minh." : "No description available for this language.";
-            await DisplayAlert("Info", msg, "OK");
-            return;
-        }
-
-        _isPlaying = true;
-        BtnPlayAudio.Text = "■";
-        LblAudioStatus.Text = App.CurrentLanguage switch
-        {
-            "en" => "Playing Introduction...",
-            "zh" => "正在播放...",
-            _ => "Đang thuyết minh..."
-        };
-
-        _cts = new CancellationTokenSource();
-
-        // Tính toán thời gian chạy ProgressBar dựa trên độ dài văn bản và tốc độ đọc
-        int durationMs = (int)((textToRead.Length * 100) / SettingsPage.CurrentSpeechRate);
-        AnimateProgressBar(durationMs, _cts.Token);
-
-        try
-        {
-            var locales = await TextToSpeech.Default.GetLocalesAsync();
-            // 2. Tìm đúng giọng đọc khớp với mã ngôn ngữ (vi, en, zh)
-            var currentLocale = locales.FirstOrDefault(l =>
-                l.Language.StartsWith(App.CurrentLanguage, StringComparison.OrdinalIgnoreCase));
-
-            var options = new SpeechOptions()
-            {
-                Volume = 1.0f,
-                Locale = currentLocale,
-                Pitch = 1.0f // Bạn có thể chỉnh độ trầm bổng ở đây nếu muốn
-            };
-
-            await TextToSpeech.Default.SpeakAsync(textToRead, options, cancelToken: _cts.Token);
-        }
-        catch (TaskCanceledException) { }
-        finally
-        {
-            if (_isPlaying) StopAudio();
-        }
-    }
-
-    private void StopAudio()
-    {
-        if (!_isPlaying) return;
-        _cts?.Cancel();
-        _isPlaying = false;
-        BtnPlayAudio.Text = "▶";
-        LblAudioStatus.Text = App.CurrentLanguage == "vi" ? "Nghe thuyết minh" : "Listen to Introduction";
-        AudioProgressBar.Progress = 0;
-    }
-
-    private async void AnimateProgressBar(int totalDurationMs, CancellationToken token)
-    {
-        int delay = 100;
-        int elapsed = 0;
-        while (elapsed < totalDurationMs && !token.IsCancellationRequested)
-        {
-            await Task.Delay(delay, token);
-            elapsed += delay;
-            double progress = (double)elapsed / totalDurationMs;
-            MainThread.BeginInvokeOnMainThread(() => AudioProgressBar.Progress = progress);
-        }
-    }
+        "en" => "The QR link has been copied.",
+        "zh" => "二维码链接已复制。",
+        _ => "Đã sao chép link QR."
+    };
 }

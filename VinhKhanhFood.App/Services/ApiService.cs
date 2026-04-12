@@ -1,42 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net.Http.Json;
 using VinhKhanhFood.App.Models;
 
-namespace VinhKhanhFood.App.Services
+namespace VinhKhanhFood.App.Services;
+
+public class ApiService
 {
-    public class ApiService
+    private readonly HttpClient _httpClient;
+
+    public ApiService()
     {
-        private readonly HttpClient _httpClient;
+        var handler = new HttpClientHandler();
+        handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+        _httpClient = new HttpClient(handler);
+    }
 
-        // 10.0.2.2 địa chỉ để máy ảo Android nhìn thấy máy
-        private const string BaseUrl = "http://10.0.2.2:5020/api/Food";
-
-        public ApiService()
+    public async Task<List<FoodLocation>> GetFoodLocationsAsync()
+    {
+        try
         {
-        // Bỏ qua kiểm tra SSL, debug trên máy ảo không bị chặn
-            var handler = new HttpClientHandler();
-            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
-            _httpClient = new HttpClient(handler);
+            var response = await _httpClient.GetFromJsonAsync<List<FoodLocation>>(ApiEndpointResolver.FoodEndpoint);
+            return response ?? new List<FoodLocation>();
         }
-
-        public async Task<List<FoodLocation>> GetFoodLocationsAsync()
+        catch (Exception ex)
         {
-            try
-            {
-                // Gọi điện sang API lấy danh sách quán ốc
-                var response = await _httpClient.GetFromJsonAsync<List<FoodLocation>>(BaseUrl);
-                return response ?? new List<FoodLocation>();
-            }
-            catch (Exception ex)
-            {
-                // Nếu lỗi (ví dụ chưa bật API)
-                Console.WriteLine($"Lỗi kết nối API: {ex.Message}");
-                return new List<FoodLocation>();
-            }
+            Console.WriteLine($"Lỗi kết nối API: {ex.Message}");
+            return new List<FoodLocation>();
         }
     }
 }

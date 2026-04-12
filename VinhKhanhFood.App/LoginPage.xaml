@@ -4,20 +4,30 @@
              x:Class="VinhKhanhFood.App.LoginPage"
              BackgroundColor="{StaticResource BackgroundPrimary}">
 
-    <VerticalStackLayout Spacing="20" Padding="30" VerticalOptions="Center">
-        <Label Text="Đăng Nhập" FontSize="32" FontAttributes="Bold" HorizontalOptions="Center" TextColor="{StaticResource Primary}"/>
-        <Label Text="Hệ thống ẩm thực Quận 4" HorizontalOptions="Center" Margin="0,0,0,20" TextColor="{StaticResource TextTertiary}"/>
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="30" VerticalOptions="Center" Margin="0,40,0,20">
+            <Label x:Name="AuthTitleLabel" Text="Đăng Nhập" FontSize="32" FontAttributes="Bold" HorizontalOptions="Center" TextColor="{StaticResource Primary}"/>
+            <Label x:Name="AuthSubtitleLabel" Text="Hệ thống ẩm thực Quận 4" HorizontalOptions="Center" Margin="0,0,0,10" TextColor="{StaticResource TextTertiary}"/>
 
-        <Border StrokeShape="RoundRectangle 10" Padding="10,0" StrokeThickness="1">
-            <Entry x:Name="TxtUsername" Placeholder="Tên đăng nhập" TextColor="{StaticResource TextPrimary}"/>
-        </Border>
+            <Border StrokeShape="RoundRectangle 10" Padding="10,0" StrokeThickness="1">
+                <Entry x:Name="TxtFullName" Placeholder="Họ và tên" TextColor="{StaticResource TextPrimary}" IsVisible="False"/>
+            </Border>
 
-        <Border StrokeShape="RoundRectangle 10" Padding="10,0" StrokeThickness="1">
-            <Entry x:Name="TxtPassword" Placeholder="Mật khẩu" IsPassword="True" TextColor="{StaticResource TextPrimary}"/>
-        </Border>
+            <Border StrokeShape="RoundRectangle 10" Padding="10,0" StrokeThickness="1">
+                <Entry x:Name="TxtUsername" Placeholder="Tên đăng nhập" TextColor="{StaticResource TextPrimary}"/>
+            </Border>
 
-        <Button Text="XÁC NHẬN" Clicked="OnLoginBtnClicked" HeightRequest="50" CornerRadius="25" BackgroundColor="{StaticResource Primary}"/>
+            <Border StrokeShape="RoundRectangle 10" Padding="10,0" StrokeThickness="1">
+                <Entry x:Name="TxtPassword" Placeholder="Mật khẩu" IsPassword="True" TextColor="{StaticResource TextPrimary}"/>
+            </Border>
 
-        <Button Text="Hủy" Clicked="OnCancelClicked" BackgroundColor="Transparent" TextColor="{StaticResource TextTertiary}"/>
-    </VerticalStackLayout>
+            <Border x:Name="ConfirmPasswordBorder" StrokeShape="RoundRectangle 10" Padding="10,0" StrokeThickness="1" IsVisible="False">
+                <Entry x:Name="TxtConfirmPassword" Placeholder="Xác nhận mật khẩu" IsPassword="True" TextColor="{StaticResource TextPrimary}"/>
+            </Border>
+
+            <Button x:Name="SubmitButton" Text="XÁC NHẬN" Clicked="OnSubmitBtnClicked" HeightRequest="50" CornerRadius="25" BackgroundColor="{StaticResource Primary}"/>
+            <Button x:Name="SwitchModeButton" Text="Chưa có tài khoản? Đăng ký" Clicked="OnSwitchModeClicked" BackgroundColor="Transparent" TextColor="{StaticResource Primary}"/>
+            <Button x:Name="CancelButton" Text="Hủy" Clicked="OnCancelClicked" BackgroundColor="Transparent" TextColor="{StaticResource TextTertiary}"/>
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

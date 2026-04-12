@@ -1,5 +1,6 @@
-﻿using VinhKhanhFood.App.ViewModels;
 using VinhKhanhFood.App.Models;
+using VinhKhanhFood.App.Services;
+using VinhKhanhFood.App.ViewModels;
 
 namespace VinhKhanhFood.App;
 
@@ -12,16 +13,17 @@ public partial class ExplorePage : ContentPage
         InitializeComponent();
         _viewModel = new ExploreViewModel();
         BindingContext = _viewModel;
+        UpdateLocalizedTexts();
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
 
-        // Đăng ký sự kiện đổi ngôn ngữ để làm mới danh sách ngay lập tức
-        Services.LocalizationService.LanguageChanged += OnLanguageChanged;
+        LocalizationService.LanguageChanged += OnLanguageChanged;
+        UpdateLocalizedTexts();
+        _viewModel.RefreshLocalizedProjection();
 
-        // Tải dữ liệu lần đầu hoặc làm mới
         if (_viewModel.Locations.Count == 0)
         {
             await _viewModel.LoadLocationsAsync();
@@ -31,41 +33,44 @@ public partial class ExplorePage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        // Hủy đăng ký để tránh rò rỉ bộ nhớ
-        Services.LocalizationService.LanguageChanged -= OnLanguageChanged;
+        LocalizationService.LanguageChanged -= OnLanguageChanged;
     }
 
-    private void OnLanguageChanged(object? sender, Services.LanguageChangedEventArgs e)
+    private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            // 1. Cập nhật Tiêu đề trang từ file Resource dịch thuật
-            Title = Services.LocalizationService.GetString("Explore");
-
-            // 2. Ép danh sách cập nhật lại để gọi vào DisplayName/DisplayDescription
-            if (_viewModel.Locations != null && _viewModel.Locations.Any())
-            {
-                var currentData = _viewModel.Locations.ToList();
-                _viewModel.Locations.Clear();
-                foreach (var item in currentData)
-                {
-                    _viewModel.Locations.Add(item);
-                }
-            }
+            UpdateLocalizedTexts();
+            _viewModel.RefreshLocalizedProjection();
         });
+    }
+
+    private void UpdateLocalizedTexts()
+    {
+        WidgetTitleLabel.Text = LocalizationService.GetString("FeaturedPoiWidgetTitle");
+        WidgetSubtitleLabel.Text = LocalizationService.GetString("FeaturedPoiWidgetSubtitle");
+        NearbyListTitleLabel.Text = LocalizationService.GetString("NearbyPoiListTitle");
     }
 
     private async void OnLocationSelected(object sender, SelectionChangedEventArgs e)
     {
-        if (e.CurrentSelection.FirstOrDefault() is FoodLocation selectedLocation)
+        if (e.CurrentSelection.FirstOrDefault() is not FoodLocation selectedLocation)
         {
-            // Điều hướng sang trang chi tiết
-            await Navigation.PushAsync(new DetailPage(selectedLocation));
-
-            // Bỏ chọn item trên UI
-            ((CollectionView)sender).SelectedItem = null;
+            return;
         }
+
+        await Navigation.PushAsync(new DetailPage(selectedLocation));
+        ((CollectionView)sender).SelectedItem = null;
     }
 
-    
+    private async void OnHotLocationSelected(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.CurrentSelection.FirstOrDefault() is not FoodLocation selectedLocation)
+        {
+            return;
+        }
+
+        await Navigation.PushAsync(new DetailPage(selectedLocation));
+        ((CollectionView)sender).SelectedItem = null;
+    }
 }

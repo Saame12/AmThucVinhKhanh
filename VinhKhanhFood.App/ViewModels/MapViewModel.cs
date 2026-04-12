@@ -1,41 +1,73 @@
-﻿using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Devices.Sensors;
 using VinhKhanhFood.App.Models;
 using VinhKhanhFood.App.Services;
 
 namespace VinhKhanhFood.App.ViewModels;
 
-public class MapViewModel
+public sealed class MapViewModel
 {
-    private readonly ApiService _apiService = new ApiService();
+    private readonly ApiService _apiService;
+    private readonly AudioGuideService _audioGuideService;
 
-    // Nơi chứa dữ liệu sau khi tải về, Giao diện sẽ lấy từ đây
+    private CancellationTokenSource? _trackingCts;
+    private bool _isInitialized;
+    private bool _isTrackingLocation;
+    private readonly HashSet<int> _announcedPoiIds = new();
+
+    public MapViewModel()
+        : this(new ApiService(), App.AudioGuide)
+    {
+    }
+
+    public MapViewModel(ApiService apiService, AudioGuideService audioGuideService)
+    {
+        _apiService = apiService;
+        _audioGuideService = audioGuideService;
+    }
+
     public List<FoodLocation> Locations { get; private set; } = new();
 
-    private bool _isTrackingLocation = false;
-    private HashSet<int> _readLocationIds = new();
-    private CancellationTokenSource? _cts;
-    private CancellationTokenSource? _speechCts;
-
-    // Sự kiện "bắn tin" cho giao diện biết khi đã tải API xong
     public event Action<List<FoodLocation>>? OnLocationsLoaded;
 
-    /// <summary>
-    /// Hàm khởi chạy (Gom chung API và Tracking)
-    /// </summary>
     public async Task InitializeAsync()
     {
-        await LoadDataAsync();
+        if (!_isInitialized || Locations.Count == 0)
+        {
+            await LoadDataAsync();
+            _isInitialized = Locations.Count > 0;
+        }
+
         await StartTrackingLocationAsync();
     }
 
-    /// <summary>
-    /// Tắt định vị và âm thanh khi thoát trang
-    /// </summary>
     public void StopTracking()
     {
         _isTrackingLocation = false;
-        _cts?.Cancel();
-        _speechCts?.Cancel();
+        _trackingCts?.Cancel();
+    }
+
+    public void ResetAutoGuide()
+    {
+        _announcedPoiIds.Clear();
+    }
+
+    public async Task<Location?> GetCurrentLocationAsync()
+    {
+        try
+        {
+            return await Geolocation.Default.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public void CancelSpeech() => _audioGuideService.Cancel();
+
+    public async Task<bool> PlayPoiAudioAsync(FoodLocation poi, CancellationToken cancellationToken = default)
+    {
+        return await _audioGuideService.PlayPoiAsync(poi, cancellationToken);
     }
 
     private async Task LoadDataAsync()
@@ -43,15 +75,11 @@ public class MapViewModel
         try
         {
             Locations = await _apiService.GetFoodLocationsAsync();
-            if (Locations != null && Locations.Count > 0)
-            {
-                // Gọi sự kiện để báo cho MainPage vẽ bản đồ
-                OnLocationsLoaded?.Invoke(Locations);
-            }
+            OnLocationsLoaded?.Invoke(Locations);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Lỗi API: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Load data failed: {ex.Message}");
         }
     }
 
@@ -59,95 +87,84 @@ public class MapViewModel
     {
         try
         {
-            PermissionStatus status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-            if (status != PermissionStatus.Granted) return;
+            var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted || _isTrackingLocation)
+            {
+                return;
+            }
 
             _isTrackingLocation = true;
-            _cts = new CancellationTokenSource();
+            _trackingCts = new CancellationTokenSource();
 
-            Device.StartTimer(TimeSpan.FromSeconds(3), () =>
+            Application.Current?.Dispatcher.StartTimer(TimeSpan.FromSeconds(4), () =>
             {
-                if (!_isTrackingLocation || _cts?.IsCancellationRequested == true)
+                if (!_isTrackingLocation || _trackingCts.IsCancellationRequested)
+                {
                     return false;
+                }
 
-                _ = PollLocationAsync();
-                return _isTrackingLocation;
+                _ = PollLocationAsync(_trackingCts.Token);
+                return true;
             });
         }
-        catch { /* Bỏ qua log lỗi để app không văng */ }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Start tracking failed: {ex.Message}");
+        }
     }
 
-    private async Task PollLocationAsync()
+    private async Task PollLocationAsync(CancellationToken cancellationToken)
     {
         try
         {
-            var location = await Geolocation.Default.GetLocationAsync();
-            if (location != null) CheckGeofence(location);
+            var location = await Geolocation.Default.GetLocationAsync(
+                new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10)),
+                cancellationToken);
+
+            if (location is not null)
+            {
+                await CheckGeofenceAsync(location, cancellationToken);
+            }
         }
-        catch { }
-    }
-
-    private void CheckGeofence(Location userLocation)
-    {
-        if (Locations == null) return;
-
-        var nearby = Locations
-            .Where(loc => userLocation.CalculateDistance(new Location(loc.Latitude, loc.Longitude), DistanceUnits.Kilometers) <= 0.03)
-            .Where(loc => !_readLocationIds.Contains(loc.Id))
-            .OrderBy(loc => userLocation.CalculateDistance(new Location(loc.Latitude, loc.Longitude), DistanceUnits.Kilometers))
-            .ToList();
-
-        var closest = nearby.FirstOrDefault();
-        if (closest != null)
+        catch (TaskCanceledException)
         {
-            _readLocationIds.Add(closest.Id);
-            string message = !string.IsNullOrEmpty(closest.Description)
-                ? $"Bạn đang ở gần {closest.Name}. {closest.Description}"
-                : $"Bạn đang ở gần {closest.Name}";
-
-            TextToSpeech.Default.SpeakAsync(message);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Poll location failed: {ex.Message}");
         }
     }
 
-    // --- CÁC HÀM XỬ LÝ ÂM THANH CHO GIAO DIỆN GỌI ---
-
-    public async Task PlayPinAudioAsync(FoodLocation locData)
+    private async Task CheckGeofenceAsync(Location userLocation, CancellationToken cancellationToken)
     {
-        string speechText = !string.IsNullOrEmpty(locData.Description)
-                            ? locData.Description
-                            : $"Đây là quán {locData.Name}";
-
-        _speechCts?.Cancel();
-        _speechCts = new CancellationTokenSource();
-
-        try
+        if (Locations.Count == 0)
         {
-            await TextToSpeech.Default.SpeakAsync(speechText, cancelToken: _speechCts.Token);
+            return;
         }
-        catch (TaskCanceledException) { }
-    }
 
-    public async Task PlayGeneralIntroAsync()
-    {
-        _readLocationIds.Clear();
-        await TextToSpeech.Default.SpeakAsync("Chế độ hướng dẫn viên tự động đã bật. Hãy bắt đầu đi dạo phố Vĩnh Khánh nào!");
-    }
+        var closestPoi = Locations
+            .Select(poi => new
+            {
+                Poi = poi,
+                DistanceInKm = userLocation.CalculateDistance(
+                    new Location(poi.Latitude, poi.Longitude),
+                    DistanceUnits.Kilometers)
+            })
+            .Where(item => item.DistanceInKm <= 0.03)
+            .Where(item => !_announcedPoiIds.Contains(item.Poi.Id))
+            .OrderBy(item => item.DistanceInKm)
+            .Select(item => item.Poi)
+            .FirstOrDefault();
 
-    public void CancelSpeech()
-    {
-        _speechCts?.Cancel();
-    }
-
-    public async Task<Location> GetCurrentLocationAsync()
-    {
-        try
+        if (closestPoi is null)
         {
-            var location = await Geolocation.Default.GetLocationAsync();
-            return location;
+            return;
         }
-        catch
+
+        var started = await _audioGuideService.AutoPlayPoiAsync(closestPoi, cancellationToken);
+        if (started)
         {
-            return null;
+            _announcedPoiIds.Add(closestPoi.Id);
         }
     }
 }

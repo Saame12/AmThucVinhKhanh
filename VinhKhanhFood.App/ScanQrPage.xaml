@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
+             x:Class="VinhKhanhFood.App.ScanQrPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#08111F">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Grid Padding="20,42,20,18" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <VerticalStackLayout Spacing="6">
+                <Label x:Name="ScanTitleLabel"
+                       FontSize="30"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+                <Label x:Name="ScanSubtitleLabel"
+                       FontSize="13"
+                       TextColor="#B8C4D6" />
+            </VerticalStackLayout>
+
+            <Border Grid.Column="1"
+                    WidthRequest="56"
+                    HeightRequest="56"
+                    BackgroundColor="#132238"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 20">
+                <Label Text="QR"
+                       FontSize="15"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center"
+                       TextColor="#7DD3FC" />
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="20,0,20,0">
+            <Border StrokeThickness="0"
+                    BackgroundColor="#0F1B2E"
+                    StrokeShape="RoundRectangle 34"
+                    Padding="12">
+                <Grid>
+                    <zxing:CameraBarcodeReaderView x:Name="BarcodeReader"
+                                                   BarcodesDetected="OnBarcodesDetected"
+                                                   IsDetecting="True"
+                                                   HorizontalOptions="Fill"
+                                                   VerticalOptions="Fill" />
+
+                    <Grid RowDefinitions="Auto,*,Auto">
+                        <Border Margin="16,16,16,0"
+                                BackgroundColor="#8808111F"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 18"
+                                Padding="14,10"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Start">
+                            <HorizontalStackLayout Spacing="8">
+                                <Border BackgroundColor="#16324F"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 10"
+                                        Padding="8,4">
+                                    <Label Text="Live camera"
+                                           FontSize="11"
+                                           FontAttributes="Bold"
+                                           TextColor="#7DD3FC" />
+                                </Border>
+                                <Border BackgroundColor="#173322"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 10"
+                                        Padding="8,4">
+                                    <Label Text="POI QR"
+                                           FontSize="11"
+                                           FontAttributes="Bold"
+                                           TextColor="#86EFAC" />
+                                </Border>
+                            </HorizontalStackLayout>
+                        </Border>
+
+                        <Grid Grid.Row="1"
+                              WidthRequest="248"
+                              HeightRequest="248"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center">
+                            <Border Stroke="#7DD3FC"
+                                    StrokeThickness="3"
+                                    BackgroundColor="#22000000"
+                                    StrokeShape="RoundRectangle 28" />
+
+                            <Border Margin="0,-1,0,0"
+                                    HeightRequest="4"
+                                    BackgroundColor="#F97316"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 4"
+                                    VerticalOptions="Center" />
+                        </Grid>
+
+                        <Label Grid.Row="2"
+                               Text="Giữ mã QR nằm trọn trong khung để mở audio của quán"
+                               Margin="0,0,0,18"
+                               FontSize="12"
+                               HorizontalTextAlignment="Center"
+                               TextColor="#D4DCE8" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2"
+                Margin="20,18,20,26"
+                Padding="18"
+                StrokeThickness="0"
+                BackgroundColor="#FFFDF9"
+                StrokeShape="RoundRectangle 26">
+            <VerticalStackLayout Spacing="12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label x:Name="HintTitleLabel"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="#132238" />
+                        <Label x:Name="HintBodyLabel"
+                               FontSize="13"
+                               TextColor="#5D6B82" />
+                    </VerticalStackLayout>
+
+                    <Border Grid.Column="1"
+                            BackgroundColor="#EFF6FF"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 14"
+                            Padding="10,8"
+                            VerticalOptions="Start">
+                        <Label Text="AUTO"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               TextColor="#2563EB" />
+                    </Border>
+                </Grid>
+
+                <Border BackgroundColor="#FFF1E8"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 16"
+                        Padding="14,12">
+                    <Label x:Name="ScanStatusLabel"
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="#E85D2A" />
+                </Border>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

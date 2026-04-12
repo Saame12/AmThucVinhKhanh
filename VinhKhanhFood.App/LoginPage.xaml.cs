@@ -1,70 +1,124 @@
-using System.Net.Http.Json;
+using VinhKhanhFood.App.Models;
+using VinhKhanhFood.App.Services;
 
 namespace VinhKhanhFood.App;
 
 public partial class LoginPage : ContentPage
 {
+    private bool _isRegisterMode;
+
     public LoginPage()
     {
         InitializeComponent();
+        UpdateMode();
     }
 
-    private async void OnLoginBtnClicked(object sender, EventArgs e)
+    protected override void OnAppearing()
     {
-        string username = TxtUsername.Text;
-        string password = TxtPassword.Text;
+        base.OnAppearing();
+        LocalizationService.LanguageChanged += OnLanguageChanged;
+    }
 
-        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
-        {
-            await DisplayAlert("Thông báo", "Vui lòng nhập đầy đủ thông tin", "OK");
-            return;
-        }
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        LocalizationService.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(UpdateMode);
+    }
+
+    private void UpdateMode()
+    {
+        AuthTitleLabel.Text = LocalizationService.GetString(_isRegisterMode ? "RegisterTitle" : "LoginTitle");
+        AuthSubtitleLabel.Text = LocalizationService.GetString("AuthSubtitle");
+        TxtFullName.Placeholder = LocalizationService.GetString("FullName");
+        TxtUsername.Placeholder = LocalizationService.GetString("Username");
+        TxtPassword.Placeholder = LocalizationService.GetString("Password");
+        TxtConfirmPassword.Placeholder = LocalizationService.GetString("ConfirmPassword");
+        SubmitButton.Text = LocalizationService.GetString(_isRegisterMode ? "SubmitRegister" : "SubmitLogin");
+        SwitchModeButton.Text = LocalizationService.GetString(_isRegisterMode ? "SwitchToLogin" : "SwitchToRegister");
+        CancelButton.Text = LocalizationService.GetString("Cancel");
+        TxtFullName.IsVisible = _isRegisterMode;
+        ConfirmPasswordBorder.IsVisible = _isRegisterMode;
+    }
+
+    private async void OnSubmitBtnClicked(object sender, EventArgs e)
+    {
+        SubmitButton.IsEnabled = false;
 
         try
         {
-            using var client = new HttpClient();
-            // LƯU Ý: Thay đổi IP này thành IP máy tính của bạn (kiểm tra bằng ipconfig)
-            string apiUrl = "http://10.0.2.2:5020/api/User/login";
-
-            var loginInfo = new { Username = username, Password = password };
-            var response = await client.PostAsJsonAsync(apiUrl, loginInfo);
-
-            if (response.IsSuccessStatusCode)
+            if (_isRegisterMode)
             {
-                // Đổi từ dynamic sang LoginResponse
-                var user = await response.Content.ReadFromJsonAsync<LoginResponse>();
-
-                if (user != null)
-                {
-                    // Lưu vào bộ nhớ máy
-                    Preferences.Default.Set("IsLoggedIn", true);
-                    Preferences.Default.Set("UserName", user.fullName);
-                    Preferences.Default.Set("UserRole", user.role);
-
-                    await DisplayAlert("Thành công", $"Chào mừng {user.fullName}!", "OK");
-                    await Navigation.PopModalAsync();
-                }
+                await RegisterAsync();
             }
             else
             {
-                await DisplayAlert("Lỗi", "Tài khoản hoặc mật khẩu không đúng", "Thử lại");
+                await LoginAsync();
             }
         }
-        catch (Exception ex)
+        finally
         {
-            await DisplayAlert("Lỗi kết nối", "Không thể kết nối đến máy chủ: " + ex.Message, "OK");
+            SubmitButton.IsEnabled = true;
         }
+    }
+
+    private async Task LoginAsync()
+    {
+        var request = new LoginRequest
+        {
+            Username = TxtUsername.Text?.Trim() ?? string.Empty,
+            Password = TxtPassword.Text ?? string.Empty
+        };
+
+        var result = await App.Auth.LoginAsync(request);
+        if (!result.Success)
+        {
+            await DisplayAlert(LocalizationService.GetString("Error"), result.ErrorMessage ?? LocalizationService.GetString("AuthRequestFailed"), LocalizationService.GetString("OK"));
+            return;
+        }
+
+        await DisplayAlert(LocalizationService.GetString("Info"), LocalizationService.GetString("AuthLoginSuccess"), LocalizationService.GetString("OK"));
+        await Navigation.PopModalAsync();
+    }
+
+    private async Task RegisterAsync()
+    {
+        if (!string.Equals(TxtPassword.Text, TxtConfirmPassword.Text, StringComparison.Ordinal))
+        {
+            await DisplayAlert(LocalizationService.GetString("Error"), LocalizationService.GetString("AuthPasswordMismatch"), LocalizationService.GetString("OK"));
+            return;
+        }
+
+        var request = new RegisterRequest
+        {
+            FullName = TxtFullName.Text?.Trim() ?? string.Empty,
+            Username = TxtUsername.Text?.Trim() ?? string.Empty,
+            Password = TxtPassword.Text ?? string.Empty
+        };
+
+        var result = await App.Auth.RegisterAsync(request);
+        if (!result.Success)
+        {
+            await DisplayAlert(LocalizationService.GetString("Error"), result.ErrorMessage ?? LocalizationService.GetString("AuthRequestFailed"), LocalizationService.GetString("OK"));
+            return;
+        }
+
+        await DisplayAlert(LocalizationService.GetString("Info"), LocalizationService.GetString("AuthRegisterSuccess"), LocalizationService.GetString("OK"));
+        await Navigation.PopModalAsync();
+    }
+
+    private void OnSwitchModeClicked(object sender, EventArgs e)
+    {
+        _isRegisterMode = !_isRegisterMode;
+        UpdateMode();
     }
 
     private async void OnCancelClicked(object sender, EventArgs e)
     {
         await Navigation.PopModalAsync();
-    }
-    public class LoginResponse
-    {
-        public int id { get; set; }
-        public string username { get; set; }
-        public string fullName { get; set; }
-        public string role { get; set; }
     }
 }

@@ -1,186 +1,179 @@
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="VinhKhanhFood.App.DetailPage"
-             Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource BackgroundPrimary}">
 
-    <Grid RowDefinitions="*, Auto">
+    <ScrollView>
+        <VerticalStackLayout Padding="20,24,20,32" Spacing="20">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Button x:Name="BackButton"
+                        Text="&#60;"
+                        WidthRequest="46"
+                        HeightRequest="46"
+                        CornerRadius="23"
+                        BackgroundColor="{StaticResource SurfaceLight}"
+                        TextColor="{StaticResource TextPrimary}"
+                        HorizontalOptions="Start"
+                        Clicked="OnBackClicked" />
 
-        <ScrollView Grid.Row="0">
-            <VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                    <Label Text="POI Detail"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="#E85D2A" />
+                    <Label Text="Audio and QR Experience"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}" />
+                </VerticalStackLayout>
 
-                <!-- Hero Image Section -->
-                <Grid HeightRequest="300" BackgroundColor="{StaticResource Gray200}">
-                    <Image Source="{Binding ImageUrl}" Aspect="AspectFill" />
+                <Border Grid.Column="2"
+                        BackgroundColor="#FFF1E8"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 14"
+                        Padding="10,8"
+                        VerticalOptions="Center">
+                    <Label Text="{Binding QrCodeLabel}"
+                           FontSize="10"
+                           FontAttributes="Bold"
+                           TextColor="#E85D2A" />
+                </Border>
+            </Grid>
 
-                    <!-- Dark Overlay -->
-                    <BoxView Color="#000000" Opacity="0.2" />
+            <Grid RowDefinitions="Auto,Auto">
+                <Border StrokeThickness="0"
+                        StrokeShape="RoundRectangle 28">
+                    <Image x:Name="HeroImage"
+                           HeightRequest="280"
+                           Aspect="AspectFill" />
+                </Border>
 
-                    <!-- Back Button -->
-                    <Button Text="←" 
-                            FontSize="22" 
-                            FontAttributes="Bold" 
-                            TextColor="White" 
-                            BackgroundColor="{StaticResource Gray400}" 
-                            CornerRadius="20" 
-                            WidthRequest="44" 
-                            HeightRequest="44" 
-                            HorizontalOptions="Start" 
-                            VerticalOptions="Start" 
-                            Margin="16,24,0,0" 
-                            Padding="0"
-                            Clicked="OnBackButtonClicked" />
-
-                    <!-- Share Button -->
-                    <Button Text="🔗" 
-                            FontSize="18" 
-                            TextColor="White" 
-                            BackgroundColor="{StaticResource Primary}" 
-                            CornerRadius="20" 
-                            WidthRequest="44" 
-                            HeightRequest="44" 
-                            HorizontalOptions="End" 
-                            VerticalOptions="Start" 
-                            Margin="0,24,16,0" 
-                            Padding="0" />
-                </Grid>
-
-                <!-- Main Content -->
-                <VerticalStackLayout Padding="20" Spacing="16" BackgroundColor="{StaticResource BackgroundPrimary}">
-
-                    <!-- Title and Rating -->
+                <Border Margin="16,-34,16,0"
+                        Grid.Row="1"
+                        BackgroundColor="#FFFDF9"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 24"
+                        Padding="16">
                     <VerticalStackLayout Spacing="8">
-                        <Label Text="{Binding Name}" FontSize="28" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
-                        <HorizontalStackLayout Spacing="8">
-                            <Label Text="⭐" FontSize="16" VerticalOptions="Center" />
-                            <Label Text="4.7" TextColor="{StaticResource Primary}" FontSize="15" FontAttributes="Bold" VerticalOptions="Center" />
-                            <Label Text="•" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
-                            <Label Text="Category: Seafood &amp; Snails" TextColor="{StaticResource TextSecondary}" FontSize="13" VerticalOptions="Center" />
-                        </HorizontalStackLayout>
+                        <Label x:Name="NameLabel"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}" />
+                        <Label x:Name="DescriptionLabel"
+                               FontSize="14"
+                               TextColor="{StaticResource TextSecondary}" />
                     </VerticalStackLayout>
+                </Border>
+            </Grid>
 
-                    <!-- Info Cards -->
-                    <VerticalStackLayout Spacing="10">
-                        <!-- Location -->
-                        <Border StrokeShape="RoundRectangle 12" BackgroundColor="{StaticResource SurfaceLight}" Stroke="{StaticResource Divider}" StrokeThickness="1" Padding="14,12">
-                            <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
-                                <Label Text="📍" FontSize="18" TextColor="{StaticResource Primary}" />
-                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
-                                    <Label Text="Location" TextColor="{StaticResource TextTertiary}" FontSize="11" />
-                                    <Label Text="123 Vĩnh Khánh, Quận 4" TextColor="{StaticResource TextPrimary}" FontSize="13" FontAttributes="Bold" />
-                                </VerticalStackLayout>
-                            </HorizontalStackLayout>
+            <Border StrokeThickness="0"
+                    BackgroundColor="{StaticResource SurfaceLight}"
+                    StrokeShape="RoundRectangle 24"
+                    Padding="18">
+                <VerticalStackLayout Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label x:Name="AudioSectionTitleLabel"
+                                   FontSize="20"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label x:Name="AudioStatusLabel"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+
+                        <Border Grid.Column="1"
+                                BackgroundColor="#EFF6FF"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 14"
+                                Padding="10,8"
+                                VerticalOptions="Start">
+                            <Label Text="GUIDE"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   TextColor="#2563EB" />
                         </Border>
+                    </Grid>
 
-                        <!-- Hours -->
-                        <Border StrokeShape="RoundRectangle 12" BackgroundColor="{StaticResource SurfaceLight}" Stroke="{StaticResource Divider}" StrokeThickness="1" Padding="14,12">
-                            <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
-                                <Label Text="🕒" FontSize="18" TextColor="{StaticResource Primary}" />
-                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
-                                    <Label Text="Opening Hours" TextColor="{StaticResource TextTertiary}" FontSize="11" />
-                                    <Label Text="5:00 PM - 11:30 PM" TextColor="{StaticResource TextPrimary}" FontSize="13" FontAttributes="Bold" />
-                                </VerticalStackLayout>
-                            </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="12">
+                        <Button x:Name="PlayAudioButton"
+                                TextColor="White"
+                                BackgroundColor="#E85D2A"
+                                CornerRadius="16"
+                                HeightRequest="48"
+                                HorizontalOptions="Fill"
+                                Clicked="OnPlayAudioClicked" />
+                        <Button x:Name="CancelAudioButton"
+                                TextColor="{StaticResource TextPrimary}"
+                                BackgroundColor="{StaticResource BackgroundSecondary}"
+                                CornerRadius="16"
+                                HeightRequest="48"
+                                HorizontalOptions="Fill"
+                                Clicked="OnCancelAudioClicked" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border StrokeThickness="0"
+                    BackgroundColor="{StaticResource SurfaceLight}"
+                    StrokeShape="RoundRectangle 24"
+                    Padding="18">
+                <VerticalStackLayout Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label x:Name="QrTitleLabel"
+                                   FontSize="20"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label x:Name="QrInstructionLabel"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+
+                        <Border Grid.Column="1"
+                                BackgroundColor="#ECFDF5"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 14"
+                                Padding="10,8"
+                                VerticalOptions="Start">
+                            <Label Text="SCAN"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   TextColor="#059669" />
                         </Border>
+                    </Grid>
 
-                        <!-- Phone -->
-                        <Border StrokeShape="RoundRectangle 12" BackgroundColor="{StaticResource SurfaceLight}" Stroke="{StaticResource Divider}" StrokeThickness="1" Padding="14,12">
-                            <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
-                                <Label Text="📞" FontSize="18" TextColor="{StaticResource Primary}" />
-                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
-                                    <Label Text="Phone" TextColor="{StaticResource TextTertiary}" FontSize="11" />
-                                    <Label Text="+84 90 456 7788" TextColor="{StaticResource TextPrimary}" FontSize="13" FontAttributes="Bold" />
-                                </VerticalStackLayout>
-                            </HorizontalStackLayout>
-                        </Border>
-                    </VerticalStackLayout>
-
-                    <!-- Audio Section -->
-                    <Border StrokeShape="RoundRectangle 14" BackgroundColor="{StaticResource SurfaceLight}" Stroke="{StaticResource Divider}" StrokeThickness="1" Padding="16,14">
-                        <VerticalStackLayout Spacing="12">
-                            <Label Text="🎙️  Audio Guide" TextColor="{StaticResource TextPrimary}" FontSize="16" FontAttributes="Bold" />
-
-                            <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
-                                <Button x:Name="BtnPlayAudio" 
-                                        Grid.Column="0" 
-                                        Text="▶" 
-                                        TextColor="White" 
-                                        BackgroundColor="{StaticResource Primary}" 
-                                        CornerRadius="24" 
-                                        WidthRequest="48" 
-                                        HeightRequest="48" 
-                                        FontSize="18" 
-                                        Padding="0" 
-                                        VerticalOptions="Center"
-                                        Clicked="OnToggleAudioClicked"/>
-
-                                <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
-                                    <Label x:Name="LblAudioStatus" Text="Listen to Introduction" TextColor="{StaticResource TextPrimary}" FontAttributes="Bold" FontSize="13" />
-                                    <ProgressBar x:Name="AudioProgressBar" 
-                                                 Progress="0" 
-                                                 ProgressColor="{StaticResource Primary}" 
-                                                 BackgroundColor="{StaticResource Gray200}"
-                                                 HeightRequest="4"/>
-                                </VerticalStackLayout>
-                            </Grid>
+                    <Border Stroke="{StaticResource Divider}"
+                            StrokeShape="RoundRectangle 22"
+                            BackgroundColor="{StaticResource BackgroundPrimary}"
+                            Padding="18">
+                        <VerticalStackLayout Spacing="14">
+                            <Image Source="{Binding QrCodeImageUrl}"
+                                   WidthRequest="190"
+                                   HeightRequest="190"
+                                   HorizontalOptions="Center"
+                                   Aspect="AspectFit" />
+                            <Label Text="{Binding QrCodeLabel}"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="#E85D2A" />
+                            <Label Text="{Binding QrAudioUri}"
+                                   FontSize="12"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{StaticResource TextSecondary}" />
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- About Section -->
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="📖  About" TextColor="{StaticResource TextPrimary}" FontSize="18" FontAttributes="Bold" />
-                        <Label Text="{Binding Description}" 
-                               TextColor="{StaticResource TextSecondary}" 
-                               LineHeight="1.6" 
-                               FontSize="14"
-                               Margin="0,0,0,8" />
-                    </VerticalStackLayout>
-
-                    <!-- Highlights -->
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="✨  Highlights" TextColor="{StaticResource TextPrimary}" FontSize="18" FontAttributes="Bold" />
-                        <VerticalStackLayout Spacing="6">
-                            <HorizontalStackLayout Spacing="8">
-                                <Label Text="✓" TextColor="{StaticResource Secondary}" FontSize="14" FontAttributes="Bold" />
-                                <Label Text="Fresh seafood daily" TextColor="{StaticResource TextSecondary}" FontSize="13" />
-                            </HorizontalStackLayout>
-                            <HorizontalStackLayout Spacing="8">
-                                <Label Text="✓" TextColor="{StaticResource Secondary}" FontSize="14" FontAttributes="Bold" />
-                                <Label Text="Traditional recipes since 1995" TextColor="{StaticResource TextSecondary}" FontSize="13" />
-                            </HorizontalStackLayout>
-                            <HorizontalStackLayout Spacing="8">
-                                <Label Text="✓" TextColor="{StaticResource Secondary}" FontSize="14" FontAttributes="Bold" />
-                                <Label Text="Family-friendly atmosphere" TextColor="{StaticResource TextSecondary}" FontSize="13" />
-                            </HorizontalStackLayout>
-                        </VerticalStackLayout>
-                    </VerticalStackLayout>
-
+                    <Button x:Name="CopyQrButton"
+                            CornerRadius="16"
+                            HeightRequest="48"
+                            BackgroundColor="{StaticResource BackgroundSecondary}"
+                            TextColor="{StaticResource TextPrimary}"
+                            Clicked="OnCopyQrClicked" />
                 </VerticalStackLayout>
-            </VerticalStackLayout>
-        </ScrollView>
-
-        <!-- Bottom Action Bar -->
-        <Grid Grid.Row="1" ColumnDefinitions="*, *" ColumnSpacing="12" Padding="16,12,16,20" BackgroundColor="{StaticResource BackgroundPrimary}">
-            <Button Grid.Column="0" 
-                    Text="🧭 Get Directions" 
-                    BackgroundColor="{StaticResource Primary}" 
-                    TextColor="White" 
-                    FontAttributes="Bold" 
-                    CornerRadius="10" 
-                    HeightRequest="52"
-                    FontSize="14"
-                    Clicked="OnGetDirectionsClicked"/>
-            <Button Grid.Column="1" 
-                    Text="📞 Call Store" 
-                    BackgroundColor="{StaticResource Gray300}" 
-                    TextColor="{StaticResource TextPrimary}" 
-                    FontAttributes="Bold" 
-                    CornerRadius="10" 
-                    HeightRequest="52"
-                    FontSize="14"
-                    BorderColor="#3A3A3A"
-                    BorderWidth="1"/>
-        </Grid>
-
-    </Grid>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

@@ -1,135 +1,117 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using VinhKhanhFood.App.Services;
 
 namespace VinhKhanhFood.App;
 
-public partial class SettingsPage : ContentPage , INotifyPropertyChanged
+public partial class SettingsPage : ContentPage
 {
-    // Biến static để DetailPage bốc dữ liệu dùng ngay
-    public static float CurrentSpeechRate { get; set; } = 1.0f;
-
-    // --- Thuộc tính Binding cho Account ---
-    public bool IsLoggedIn => Preferences.Default.Get("IsLoggedIn", false);
-    public bool IsNotLoggedIn => !IsLoggedIn;
-    public string CurrentUserName => Preferences.Default.Get("UserName", "Guest");
-    public string CurrentUserRole => Preferences.Default.Get("UserRole", "Visitor");
-
     public SettingsPage()
     {
         InitializeComponent();
-        BindingContext = this; // Rất quan trọng để IsVisible hoạt động
+        UpdateLocalizedTexts();
+        App.Auth.SessionChanged += OnSessionChanged;
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
-
-        // 1. Đồng bộ Ngôn ngữ
-        string currentLanguage = App.CurrentLanguage ?? "vi";
-        RefreshLanguageDisplay(currentLanguage);
-
-        // 2. Đồng bộ Tốc độ đọc
-        float savedRate = Preferences.Default.Get("UserSpeechSpeed", 1.0f);
-        SpeedSlider.Value = savedRate;
-        LblSpeedValue.Text = $"{savedRate:F1}x";
-        CurrentSpeechRate = savedRate;
-
-        // 3. Cập nhật trạng thái User (Đăng nhập/Đăng xuất)
-        RefreshUserStatus();
+        LocalizationService.LanguageChanged += OnLanguageChanged;
+        UpdateLocalizedTexts();
     }
 
-    // ==========================================
-    // LOGIC: AUDIO & LOCALIZATION
-    // ==========================================
-
-    private async void OnLanguageTapped(object sender, TappedEventArgs e)
+    protected override void OnDisappearing()
     {
-        LanguageModal.IsVisible = true;
-        LanguageModal.Opacity = 0;
-        await LanguageModal.FadeTo(1, 200, Easing.SinOut);
+        base.OnDisappearing();
+        LocalizationService.LanguageChanged -= OnLanguageChanged;
     }
 
-    private void OnSpeedSliderValueChanged(object sender, ValueChangedEventArgs e)
+    protected override void OnHandlerChanged()
     {
-        float speed = (float)Math.Round(e.NewValue, 1);
-        LblSpeedValue.Text = $"{speed:F1}x";
-        CurrentSpeechRate = speed;
-        Preferences.Default.Set("UserSpeechSpeed", speed);
-    }
+        base.OnHandlerChanged();
 
-    private async void OnCloseModalTapped(object sender, EventArgs e)
-    {
-        await LanguageModal.FadeTo(0, 150, Easing.SinIn);
-        LanguageModal.IsVisible = false;
-    }
-
-    private void OnLanguageSelected(object sender, TappedEventArgs e)
-    {
-        if (e.Parameter is string langCode)
+        if (Handler is null)
         {
-            App.CurrentLanguage = langCode;
-            Services.LocalizationService.SetLanguage(langCode);
-            Preferences.Default.Set("Language", langCode);
-
-            RefreshLanguageDisplay(langCode);
-            OnCloseModalTapped(this, EventArgs.Empty);
+            App.Auth.SessionChanged -= OnSessionChanged;
         }
     }
 
-    private void RefreshLanguageDisplay(string langCode)
+    private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
     {
-        // Cập nhật text hiển thị trên Setting chính
-        LblCurrentLanguage.Text = langCode switch
+        MainThread.BeginInvokeOnMainThread(UpdateLocalizedTexts);
+    }
+
+    private void OnSessionChanged(object? sender, Models.UserSession? e)
+    {
+        MainThread.BeginInvokeOnMainThread(UpdateAccountSection);
+    }
+
+    private void UpdateLocalizedTexts()
+    {
+        TitleLabel.Text = LocalizationService.GetString("SettingsTitle");
+        SubtitleLabel.Text = LocalizationService.GetString("SettingsSubtitle");
+        LanguageSectionTitleLabel.Text = LocalizationService.GetString("AudioLocalizationTitle");
+        LanguageSectionSubtitleLabel.Text = LocalizationService.GetString("AudioLocalizationSubtitle");
+        CurrentLanguageCaptionLabel.Text = LocalizationService.GetString("Language");
+        ChangeLanguageButton.Text = LocalizationService.GetString("Select Language");
+        AccountSectionTitleLabel.Text = LocalizationService.GetString("AboutAccountTitle");
+        VersionTitleLabel.Text = LocalizationService.GetString("Version Info:");
+        VersionValueLabel.Text = LocalizationService.GetString("VersionValue");
+
+        CurrentLanguageValueLabel.Text = GetCurrentLanguageDisplayName();
+        UpdateAccountSection();
+    }
+
+    private void UpdateAccountSection()
+    {
+        var session = App.Auth.CurrentSession;
+        if (session is null)
         {
-            "en" => "GB English",
-            "zh" => "CN 中文",
-            _ => "VN Tiếng Việt"
-        };
+            AccountStatusLabel.Text = LocalizationService.GetString("LoginToYourAccount");
+            AccountActionButton.Text = LocalizationService.GetString("LoginTitle");
+            return;
+        }
 
-        // Highlight màu nền cho các Option trong Modal
-        var highlightColor = Color.FromArgb("#33FF9800"); // Màu cam mờ
-        OptVietnamese.BackgroundColor = langCode == "vi" ? highlightColor : Colors.Transparent;
-        OptEnglish.BackgroundColor = langCode == "en" ? highlightColor : Colors.Transparent;
-        OptChinese.BackgroundColor = langCode == "zh" ? highlightColor : Colors.Transparent;
+        AccountStatusLabel.Text = $"{session.FullName} ({session.Username})";
+        AccountActionButton.Text = LocalizationService.GetString("Logout");
     }
 
-    // ==========================================
-    // LOGIC: ACCOUNT (USER THẬT)
-    // ==========================================
-
-    private async void OnLoginClicked(object sender, EventArgs e)
+    private async void OnChangeLanguageClicked(object sender, EventArgs e)
     {
-        // Điều hướng đến trang Đăng nhập (LoginPage)
-        // Dùng PushModalAsync để hiện đè lên trang hiện tại
-        await Navigation.PushModalAsync(new LoginPage());
+        var languages = LocalizationService.GetAvailableLanguages();
+        var labels = languages.Select(static item => item.Name).ToArray();
+        var selection = await DisplayActionSheet(
+            LocalizationService.GetString("Select Language"),
+            LocalizationService.GetString("Cancel"),
+            null,
+            labels);
+
+        if (string.IsNullOrWhiteSpace(selection) ||
+            string.Equals(selection, LocalizationService.GetString("Cancel"), StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var language = languages.FirstOrDefault(item => item.Name == selection);
+        if (!string.IsNullOrWhiteSpace(language.Code))
+        {
+            LocalizationService.SetLanguage(language.Code);
+        }
     }
 
-    private void OnLogoutClicked(object sender, EventArgs e)
+    private async void OnAccountActionClicked(object sender, EventArgs e)
     {
-        // Xóa sạch thông tin lưu trong máy
-        Preferences.Default.Set("IsLoggedIn", false);
-        Preferences.Default.Remove("UserName");
-        Preferences.Default.Remove("UserRole");
-        Preferences.Default.Remove("UserToken");
+        if (App.Auth.IsLoggedIn)
+        {
+            App.Auth.Logout();
+            return;
+        }
 
-        RefreshUserStatus();
+        await Navigation.PushModalAsync(new NavigationPage(new LoginPage()));
     }
 
-    private void RefreshUserStatus()
+    private static string GetCurrentLanguageDisplayName() => LocalizationService.CurrentLanguage switch
     {
-        // Thông báo cho UI cập nhật lại các vùng IsVisible
-        OnPropertyChanged(nameof(IsLoggedIn));
-        OnPropertyChanged(nameof(IsNotLoggedIn));
-        OnPropertyChanged(nameof(CurrentUserName));
-        OnPropertyChanged(nameof(CurrentUserRole));
-    }
-
-    // ==========================================
-    // NOTIFY PROPERTY CHANGED HELPER
-    // ==========================================
-    public event PropertyChangedEventHandler PropertyChanged;
-    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
+        "en" => "English",
+        "zh" => "中文",
+        _ => "Tiếng Việt"
+    };
 }

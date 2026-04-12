@@ -10,6 +10,7 @@ public class ExploreViewModel : BindableObject
 
     // Danh sách này sẽ tự động đổ vào CollectionView ở XAML
     public ObservableCollection<FoodLocation> Locations { get; set; } = new();
+    public ObservableCollection<FoodLocation> HotLocations { get; } = new();
 
     private bool _isBusy;
     public bool IsBusy
@@ -31,14 +32,39 @@ public class ExploreViewModel : BindableObject
             {
                 Locations.Add(item);
             }
+
+            RefreshHotLocations();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Có thể dùng DisplayAlert để báo lỗi
         }
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    public void RefreshLocalizedProjection()
+    {
+        var snapshot = Locations.ToList();
+        Locations.Clear();
+
+        foreach (var item in snapshot)
+        {
+            Locations.Add(item);
+        }
+
+        RefreshHotLocations();
+    }
+
+    private void RefreshHotLocations()
+    {
+        HotLocations.Clear();
+
+        foreach (var item in Locations.Take(5))
+        {
+            HotLocations.Add(item);
         }
     }
 }
