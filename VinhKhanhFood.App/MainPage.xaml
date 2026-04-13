@@ -5,143 +5,149 @@
              x:Class="VinhKhanhFood.App.MainPage"
              BackgroundColor="{StaticResource BackgroundPrimary}">
 
-    <Grid RowDefinitions="Auto,*">
-        <Border Margin="20,20,20,12"
-                Padding="18"
-                BackgroundColor="#FFF4EC"
-                StrokeThickness="0"
-                StrokeShape="RoundRectangle 28">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="Taste Map"
-                           FontSize="14"
-                           FontAttributes="Bold"
-                           TextColor="#E85D2A" />
-                    <Label Text="Vinh Khanh Night Food"
-                           FontSize="24"
-                           FontAttributes="Bold"
-                           TextColor="{StaticResource TextPrimary}" />
-                    <Label Text="Theo dõi POIs gần bạn và mở nhanh phần nghe thuyết minh."
-                           FontSize="13"
-                           TextColor="{StaticResource TextSecondary}" />
+    <Grid>
+        <maps:Map x:Name="vinhKhanhMap"
+                  IsShowingUser="True"
+                  VerticalOptions="Fill"
+                  HorizontalOptions="Fill" />
 
-                    <HorizontalStackLayout Spacing="10">
-                        <Border Padding="12,8"
-                                BackgroundColor="White"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 16">
-                            <Label Text="Live Guide"
-                                   FontSize="12"
-                                   FontAttributes="Bold"
-                                   TextColor="#2563EB" />
-                        </Border>
-
-                        <Border Padding="12,8"
-                                BackgroundColor="#1F2937"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 16">
-                            <Label Text="Scan Ready"
-                                   FontSize="12"
-                                   FontAttributes="Bold"
-                                   TextColor="White" />
-                        </Border>
-                    </HorizontalStackLayout>
-                </VerticalStackLayout>
-
-                <Button Grid.Column="1"
-                        Text="◎"
-                        WidthRequest="56"
-                        HeightRequest="56"
-                        CornerRadius="28"
-                        BackgroundColor="#E85D2A"
-                        TextColor="White"
-                        FontSize="22"
-                        VerticalOptions="Start"
-                        Clicked="OnCurrentLocationClicked" />
-            </Grid>
-        </Border>
-
-        <Grid Grid.Row="1">
-            <maps:Map x:Name="vinhKhanhMap"
-                      IsShowingUser="True"
-                      VerticalOptions="Fill"
-                      HorizontalOptions="Fill" />
-
-            <Border x:Name="FoodBottomSheet"
-                    IsVisible="False"
-                    TranslationY="300"
-                    Margin="16,0,16,18"
-                    Padding="18"
-                    BackgroundColor="#FFFDF9"
+        <VerticalStackLayout Padding="16,18,16,0"
+                             Spacing="10"
+                             VerticalOptions="Start">
+            <Border BackgroundColor="#FFFDF9"
                     StrokeThickness="0"
-                    StrokeShape="RoundRectangle 28"
-                    VerticalOptions="End">
-                <VerticalStackLayout Spacing="14">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="{Binding DisplayName}"
-                                   FontSize="22"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="{Binding DisplayDescription}"
-                                   FontSize="13"
-                                   MaxLines="3"
-                                   LineBreakMode="TailTruncation"
-                                   TextColor="{StaticResource TextSecondary}" />
-                        </VerticalStackLayout>
+                    StrokeShape="RoundRectangle 22"
+                    Padding="14,8">
+                <Grid ColumnDefinitions="*,Auto"
+                      ColumnSpacing="10">
+                    <Entry x:Name="PoiSearchEntry"
+                           BackgroundColor="Transparent"
+                           ClearButtonVisibility="WhileEditing"
+                           FontSize="15"
+                           PlaceholderColor="{StaticResource TextTertiary}"
+                           TextChanged="OnSearchTextChanged"
+                           VerticalOptions="Center" />
 
-                        <Button Grid.Column="1"
-                                Text="✕"
-                                WidthRequest="38"
-                                HeightRequest="38"
-                                CornerRadius="19"
-                                BackgroundColor="{StaticResource BackgroundSecondary}"
-                                TextColor="{StaticResource TextPrimary}"
-                                VerticalOptions="Start"
-                                Clicked="OnCloseBottomSheetClicked" />
-                    </Grid>
-
-                    <HorizontalStackLayout Spacing="10">
-                        <Border Padding="12,8"
-                                BackgroundColor="#EEF2FF"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 14">
-                            <Label Text="Audio ready"
-                                   FontSize="11"
-                                   FontAttributes="Bold"
-                                   TextColor="#4F46E5" />
-                        </Border>
-
-                        <Border Padding="12,8"
-                                BackgroundColor="#ECFDF5"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 14">
-                            <Label Text="Map POI"
-                                   FontSize="11"
-                                   FontAttributes="Bold"
-                                   TextColor="#059669" />
-                        </Border>
-
-                        <Border Padding="12,8"
-                                BackgroundColor="#FFF4EC"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 14">
-                            <Label Text="{Binding QrCodeLabel}"
-                                   FontSize="11"
-                                   FontAttributes="Bold"
-                                   TextColor="#E85D2A" />
-                        </Border>
-                    </HorizontalStackLayout>
-
-                    <Button Text="Xem chi tiết"
-                            HeightRequest="50"
-                            CornerRadius="18"
+                    <Button Grid.Column="1"
+                            Text="⌖"
+                            WidthRequest="42"
+                            HeightRequest="42"
+                            CornerRadius="21"
                             BackgroundColor="#E85D2A"
                             TextColor="White"
-                            FontAttributes="Bold"
-                            Clicked="OnViewDetailsClicked" />
-                </VerticalStackLayout>
+                            FontSize="18"
+                            Clicked="OnCurrentLocationClicked" />
+                </Grid>
             </Border>
-        </Grid>
+
+            <Border x:Name="SearchResultsCard"
+                    IsVisible="False"
+                    BackgroundColor="#FFFDF9"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 20"
+                    Padding="8">
+                <CollectionView x:Name="SearchResultsView"
+                                SelectionMode="Single"
+                                SelectionChanged="OnSearchResultSelected"
+                                ItemsLayout="VerticalList">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10"
+                                    BackgroundColor="Transparent"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 16">
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="{Binding DisplayName}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource TextPrimary}" />
+                                    <Label Text="{Binding DisplayDescription}"
+                                           FontSize="12"
+                                           MaxLines="2"
+                                           LineBreakMode="TailTruncation"
+                                           TextColor="{StaticResource TextSecondary}" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </Border>
+        </VerticalStackLayout>
+
+        <Border x:Name="FoodBottomSheet"
+                IsVisible="False"
+                TranslationY="300"
+                Margin="16,0,16,18"
+                Padding="18"
+                BackgroundColor="#FFFDF9"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 28"
+                VerticalOptions="End">
+            <VerticalStackLayout Spacing="14">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{Binding DisplayName}"
+                               FontSize="22"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="{Binding DisplayDescription}"
+                               FontSize="13"
+                               MaxLines="3"
+                               LineBreakMode="TailTruncation"
+                               TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+
+                    <Button Grid.Column="1"
+                            Text="×"
+                            WidthRequest="38"
+                            HeightRequest="38"
+                            CornerRadius="19"
+                            BackgroundColor="{StaticResource BackgroundSecondary}"
+                            TextColor="{StaticResource TextPrimary}"
+                            VerticalOptions="Start"
+                            Clicked="OnCloseBottomSheetClicked" />
+                </Grid>
+
+                <HorizontalStackLayout Spacing="10">
+                    <Border Padding="12,8"
+                            BackgroundColor="#EEF2FF"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 14">
+                        <Label x:Name="BottomAudioBadgeLabel"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               TextColor="#4F46E5" />
+                    </Border>
+
+                    <Border Padding="12,8"
+                            BackgroundColor="#ECFDF5"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 14">
+                        <Label Text="POI"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               TextColor="#059669" />
+                    </Border>
+
+                    <Border Padding="12,8"
+                            BackgroundColor="#FFF4EC"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 14">
+                        <Label Text="{Binding QrCodeLabel}"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               TextColor="#E85D2A" />
+                    </Border>
+                </HorizontalStackLayout>
+
+                <Button x:Name="ViewDetailsButton"
+                        HeightRequest="50"
+                        CornerRadius="18"
+                        BackgroundColor="#E85D2A"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        Clicked="OnViewDetailsClicked" />
+            </VerticalStackLayout>
+        </Border>
     </Grid>
 </ContentPage>

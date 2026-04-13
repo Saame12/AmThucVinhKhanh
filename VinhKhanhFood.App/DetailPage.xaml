@@ -18,11 +18,11 @@
                         Clicked="OnBackClicked" />
 
                 <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
-                    <Label Text="POI Detail"
+                    <Label x:Name="HeaderEyebrowLabel"
                            FontSize="12"
                            FontAttributes="Bold"
                            TextColor="#E85D2A" />
-                    <Label Text="Audio and QR Experience"
+                    <Label x:Name="HeaderTitleLabel"
                            FontSize="18"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextPrimary}" />
@@ -89,7 +89,7 @@
                                 StrokeShape="RoundRectangle 14"
                                 Padding="10,8"
                                 VerticalOptions="Start">
-                            <Label Text="GUIDE"
+                            <Label x:Name="GuideBadgeLabel"
                                    FontSize="11"
                                    FontAttributes="Bold"
                                    TextColor="#2563EB" />
@@ -137,7 +137,7 @@
                                 StrokeShape="RoundRectangle 14"
                                 Padding="10,8"
                                 VerticalOptions="Start">
-                            <Label Text="SCAN"
+                            <Label x:Name="ScanBadgeLabel"
                                    FontSize="11"
                                    FontAttributes="Bold"
                                    TextColor="#059669" />

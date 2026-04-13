@@ -5,6 +5,7 @@ namespace VinhKhanhFood.App;
 public partial class App : Application
 {
     private static Uri? _pendingUri;
+    private bool _isReloadingShell;
 
     public static AuthService Auth { get; } = new();
     public static AudioGuideService AudioGuide { get; } = new();
@@ -14,6 +15,7 @@ public partial class App : Application
     {
         InitializeComponent();
         LocalizationService.Initialize();
+        LocalizationService.LanguageChanged += OnLanguageChanged;
         MainPage = new AppShell();
 
         if (_pendingUri is not null)
@@ -22,6 +24,16 @@ public partial class App : Application
             _pendingUri = null;
             _ = HandleIncomingUriAsync(pendingUri);
         }
+    }
+
+    private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
+    {
+        if (_isReloadingShell)
+        {
+            return;
+        }
+
+        _ = ReloadShellAsync();
     }
 
     public static void ReceiveQrUri(string rawUri)
@@ -71,6 +83,34 @@ public partial class App : Application
             await Shell.Current.GoToAsync("//ExploreTab");
             await Shell.Current.Navigation.PushAsync(new DetailPage(poi, autoPlayAudio: true));
         });
+    }
+
+    private async Task ReloadShellAsync()
+    {
+        try
+        {
+            _isReloadingShell = true;
+
+            string? currentTabRoute = null;
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                currentTabRoute = Shell.Current?.CurrentItem?.Route;
+                MainPage = new AppShell();
+            });
+
+            if (!string.IsNullOrWhiteSpace(currentTabRoute) && Shell.Current is not null)
+            {
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    await Shell.Current.GoToAsync($"//{currentTabRoute}");
+                });
+            }
+        }
+        finally
+        {
+            _isReloadingShell = false;
+        }
     }
 
     private static bool TryExtractPoiId(Uri uri, out int poiId)

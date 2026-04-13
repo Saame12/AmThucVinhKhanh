@@ -69,7 +69,11 @@ public partial class DetailPage : ContentPage
     private void UpdateLocalizedTexts()
     {
         Title = LocalizationService.GetString("Details");
+        HeaderEyebrowLabel.Text = GetHeaderEyebrowText();
+        HeaderTitleLabel.Text = GetHeaderTitleText();
         AudioSectionTitleLabel.Text = LocalizationService.GetString("Audio Guide");
+        GuideBadgeLabel.Text = GetGuideBadgeText();
+        ScanBadgeLabel.Text = "QR";
         PlayAudioButton.Text = LocalizationService.GetString("Play");
         CancelAudioButton.Text = LocalizationService.GetString("Cancel");
         CopyQrButton.Text = GetQrCopyLabel();
@@ -117,6 +121,27 @@ public partial class DetailPage : ContentPage
     {
         await Navigation.PopAsync();
     }
+
+    private static string GetHeaderEyebrowText() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "POI detail",
+        "zh" => "POI 详情",
+        _ => "Chi tiết POI"
+    };
+
+    private static string GetHeaderTitleText() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "Audio and QR",
+        "zh" => "音频与 QR",
+        _ => "Audio và QR"
+    };
+
+    private static string GetGuideBadgeText() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "Guide",
+        "zh" => "导览",
+        _ => "Guide"
+    };
 
     private static string GetQrTitle() => LocalizationService.CurrentLanguage switch
     {
