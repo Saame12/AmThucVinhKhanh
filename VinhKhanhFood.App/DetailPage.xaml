@@ -6,7 +6,7 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="20,24,20,32" Spacing="20">
-            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                 <Button x:Name="BackButton"
                         Text="&#60;"
                         WidthRequest="46"
@@ -27,18 +27,6 @@
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextPrimary}" />
                 </VerticalStackLayout>
-
-                <Border Grid.Column="2"
-                        BackgroundColor="#FFF1E8"
-                        StrokeThickness="0"
-                        StrokeShape="RoundRectangle 14"
-                        Padding="10,8"
-                        VerticalOptions="Center">
-                    <Label Text="{Binding QrCodeLabel}"
-                           FontSize="10"
-                           FontAttributes="Bold"
-                           TextColor="#E85D2A" />
-                </Border>
             </Grid>
 
             <Grid RowDefinitions="Auto,Auto">
@@ -115,63 +103,43 @@
                 </VerticalStackLayout>
             </Border>
 
-            <Border StrokeThickness="0"
+            <Border x:Name="ProfessionalAudioCard"
+                    StrokeThickness="0"
                     BackgroundColor="{StaticResource SurfaceLight}"
                     StrokeShape="RoundRectangle 24"
-                    Padding="18">
-                <VerticalStackLayout Spacing="14">
+                    Padding="18"
+                    IsVisible="False">
+                <VerticalStackLayout Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="4">
-                            <Label x:Name="QrTitleLabel"
+                            <Label x:Name="ProfessionalAudioTitleLabel"
                                    FontSize="20"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}" />
-                            <Label x:Name="QrInstructionLabel"
+                            <Label x:Name="ProfessionalAudioSubtitleLabel"
                                    FontSize="13"
                                    TextColor="{StaticResource TextSecondary}" />
                         </VerticalStackLayout>
 
                         <Border Grid.Column="1"
-                                BackgroundColor="#ECFDF5"
+                                BackgroundColor="#FEF3C7"
                                 StrokeThickness="0"
                                 StrokeShape="RoundRectangle 14"
                                 Padding="10,8"
                                 VerticalOptions="Start">
-                            <Label x:Name="ScanBadgeLabel"
+                            <Label x:Name="ProfessionalAudioBadgeLabel"
                                    FontSize="11"
                                    FontAttributes="Bold"
-                                   TextColor="#059669" />
+                                   TextColor="#B45309" />
                         </Border>
                     </Grid>
 
-                    <Border Stroke="{StaticResource Divider}"
-                            StrokeShape="RoundRectangle 22"
-                            BackgroundColor="{StaticResource BackgroundPrimary}"
-                            Padding="18">
-                        <VerticalStackLayout Spacing="14">
-                            <Image Source="{Binding QrCodeImageUrl}"
-                                   WidthRequest="190"
-                                   HeightRequest="190"
-                                   HorizontalOptions="Center"
-                                   Aspect="AspectFit" />
-                            <Label Text="{Binding QrCodeLabel}"
-                                   FontSize="18"
-                                   FontAttributes="Bold"
-                                   HorizontalTextAlignment="Center"
-                                   TextColor="#E85D2A" />
-                            <Label Text="{Binding QrAudioUri}"
-                                   FontSize="12"
-                                   HorizontalTextAlignment="Center"
-                                   TextColor="{StaticResource TextSecondary}" />
-                        </VerticalStackLayout>
-                    </Border>
-
-                    <Button x:Name="CopyQrButton"
+                    <Button x:Name="UnlockProfessionalAudioButton"
                             CornerRadius="16"
                             HeightRequest="48"
                             BackgroundColor="{StaticResource BackgroundSecondary}"
                             TextColor="{StaticResource TextPrimary}"
-                            Clicked="OnCopyQrClicked" />
+                            Clicked="OnProfessionalAudioClicked" />
                 </VerticalStackLayout>
             </Border>
         </VerticalStackLayout>

@@ -31,6 +31,19 @@
         // 🔥 NEW: trạng thái duyệt (PHẢI CÓ để match API)
         public string? Status { get; set; }
         // Cập nhật logic thuộc tính thông minh hỗ trợ 3 ngôn ngữ
+        public bool HasDefaultAudio =>
+            !string.IsNullOrWhiteSpace(Description) ||
+            !string.IsNullOrWhiteSpace(Description_EN) ||
+            !string.IsNullOrWhiteSpace(Description_ZH);
+
+        public bool HasProfessionalAudio =>
+            !string.IsNullOrWhiteSpace(AudioUrl) ||
+            !string.IsNullOrWhiteSpace(AudioUrl_EN) ||
+            !string.IsNullOrWhiteSpace(AudioUrl_ZH);
+
+        public string QrAudioUri => $"vinhkhanhfood://poi/{Id}";
+        public string QrCodeLabel => $"VK-POI-{Id:D4}";
+        public string QrCodeImageUrl => $"https://quickchart.io/qr?size=260&text={Uri.EscapeDataString(QrAudioUri)}";
 
     }
 

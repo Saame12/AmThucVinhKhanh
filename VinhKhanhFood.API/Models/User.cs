@@ -10,6 +10,7 @@ public class User
     public string FullName { get; set; } = string.Empty;
     public string Role { get; set; } = "User";
     public string Status { get; set; } = "Active";
+    public bool IsVip { get; set; }
 }
 
 public class LoginRequest
@@ -33,4 +34,6 @@ public class LoginResponse
     public string FullName { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string OnlineStatus { get; set; } = "Offline";
+    public bool IsVip { get; set; }
 }

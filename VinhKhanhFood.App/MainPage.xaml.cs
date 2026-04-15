@@ -205,7 +205,7 @@ public partial class MainPage : ContentPage
     private static string GetBottomAudioBadgeText() => LocalizationService.CurrentLanguage switch
     {
         "en" => "Audio",
-        "zh" => "éŸ³é¢‘",
+        "zh" => "音频",
         _ => "Audio"
     };
 }

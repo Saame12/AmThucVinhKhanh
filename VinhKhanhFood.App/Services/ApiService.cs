@@ -9,8 +9,11 @@ public class ApiService
 
     public ApiService()
     {
-        var handler = new HttpClientHandler();
-        handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        };
+
         _httpClient = new HttpClient(handler);
     }
 
@@ -21,9 +24,14 @@ public class ApiService
             var response = await _httpClient.GetFromJsonAsync<List<FoodLocation>>(ApiEndpointResolver.FoodEndpoint);
             return response ?? new List<FoodLocation>();
         }
+        catch (HttpRequestException)
+        {
+            Console.WriteLine(ApiHealthService.GetServerUnavailableMessage());
+            return new List<FoodLocation>();
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi kết nối API: {ex.Message}");
+            Console.WriteLine($"API error: {ex.Message}");
             return new List<FoodLocation>();
         }
     }

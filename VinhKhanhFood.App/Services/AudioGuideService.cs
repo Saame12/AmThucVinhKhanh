@@ -2,15 +2,20 @@ using VinhKhanhFood.App.Models;
 
 #if ANDROID
 using Android.App;
+using AndroidMediaPlayer = Android.Media.MediaPlayer;
 using AndroidTextToSpeech = Android.Speech.Tts.TextToSpeech;
 using AndroidOperationResult = Android.Speech.Tts.OperationResult;
 using AndroidUtteranceProgressListener = Android.Speech.Tts.UtteranceProgressListener;
 using AndroidQueueMode = Android.Speech.Tts.QueueMode;
 using AndroidLocale = Java.Util.Locale;
+using AndroidNetUri = Android.Net.Uri;
 #endif
 
 #if WINDOWS
 using System.Speech.Synthesis;
+using Windows.Foundation;
+using WinMediaSource = Windows.Media.Core.MediaSource;
+using WinMediaPlayer = Windows.Media.Playback.MediaPlayer;
 #endif
 
 namespace VinhKhanhFood.App.Services;
@@ -35,11 +40,29 @@ public sealed class AudioGuideService
     private FoodLocation? _currentPoi;
     private AudioGuidePlaybackState _state = AudioGuidePlaybackState.Idle;
 
+#if WINDOWS
+    private WinMediaPlayer? _windowsMediaPlayer;
+#endif
+
+#if ANDROID
+    private AndroidMediaPlayer? _androidMediaPlayer;
+#endif
+
     public event EventHandler<AudioGuideStateChangedEventArgs>? StateChanged;
 
     public AudioGuidePlaybackState State => _state;
     public FoodLocation? CurrentPoi => _currentPoi;
     public bool IsPlaying => State == AudioGuidePlaybackState.Playing;
+
+    public Task<bool> AutoPlayPoiAsync(FoodLocation poi, CancellationToken cancellationToken = default)
+    {
+        if (CurrentPoi?.Id == poi.Id && IsPlaying)
+        {
+            return Task.FromResult(false);
+        }
+
+        return PlayPoiAsync(poi, cancellationToken);
+    }
 
     public async Task<bool> PlayPoiAsync(FoodLocation poi, CancellationToken cancellationToken = default)
     {
@@ -49,6 +72,39 @@ public sealed class AudioGuideService
             return false;
         }
 
+        await StartPlaybackAsync(
+            poi,
+            token => RunNarrationPlaybackAsync(narration, poi, token),
+            cancellationToken);
+
+        return true;
+    }
+
+    public async Task<bool> PlayProfessionalAudioAsync(FoodLocation poi, CancellationToken cancellationToken = default)
+    {
+        var audioUrl = poi.DisplayAudioUrl?.Trim();
+        if (string.IsNullOrWhiteSpace(audioUrl))
+        {
+            return false;
+        }
+
+        var resolvedAudioUrl = ApiEndpointResolver.ResolveAssetUrl(audioUrl);
+        await StartPlaybackAsync(
+            poi,
+            token => RunProfessionalPlaybackAsync(resolvedAudioUrl, poi, token),
+            cancellationToken);
+
+        return true;
+    }
+
+    public void Cancel()
+    {
+        StopCore();
+        PublishState();
+    }
+
+    private async Task StartPlaybackAsync(FoodLocation poi, Func<CancellationToken, Task> playbackAction, CancellationToken cancellationToken)
+    {
         await _playbackLock.WaitAsync(cancellationToken);
         try
         {
@@ -59,8 +115,7 @@ public sealed class AudioGuideService
             _playbackCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             PublishState();
 
-            _ = RunPlaybackAsync(narration, poi, _playbackCts.Token);
-            return true;
+            _ = playbackAction(_playbackCts.Token);
         }
         finally
         {
@@ -68,33 +123,12 @@ public sealed class AudioGuideService
         }
     }
 
-    public void Cancel()
-    {
-        StopCore();
-        PublishState();
-    }
-
-    public async Task<bool> AutoPlayPoiAsync(FoodLocation poi, CancellationToken cancellationToken = default)
-    {
-        if (CurrentPoi?.Id == poi.Id && IsPlaying)
-        {
-            return false;
-        }
-
-        return await PlayPoiAsync(poi, cancellationToken);
-    }
-
-    private async Task RunPlaybackAsync(string narration, FoodLocation poi, CancellationToken cancellationToken)
+    private async Task RunNarrationPlaybackAsync(string narration, FoodLocation poi, CancellationToken cancellationToken)
     {
         try
         {
             await SpeakNarrationAsync(narration, cancellationToken);
-
-            if (!cancellationToken.IsCancellationRequested && CurrentPoi?.Id == poi.Id)
-            {
-                StopCore();
-                PublishState();
-            }
+            CompletePlaybackForPoi(poi.Id);
         }
         catch (OperationCanceledException)
         {
@@ -104,6 +138,39 @@ public sealed class AudioGuideService
             StopCore();
             PublishState();
         }
+    }
+
+    private async Task RunProfessionalPlaybackAsync(string audioUrl, FoodLocation poi, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await PlayProfessionalAudioCoreAsync(audioUrl, cancellationToken);
+            CompletePlaybackForPoi(poi.Id);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch
+        {
+            StopCore();
+            PublishState();
+        }
+    }
+
+    private void CompletePlaybackForPoi(int poiId)
+    {
+        if (_playbackCts?.IsCancellationRequested == true)
+        {
+            return;
+        }
+
+        if (CurrentPoi?.Id != poiId)
+        {
+            return;
+        }
+
+        StopCore();
+        PublishState();
     }
 
     private async Task SpeakNarrationAsync(string narration, CancellationToken cancellationToken)
@@ -122,6 +189,17 @@ public sealed class AudioGuideService
         };
 
         await Microsoft.Maui.Media.TextToSpeech.Default.SpeakAsync(narration, options, cancellationToken);
+#endif
+    }
+
+    private async Task PlayProfessionalAudioCoreAsync(string audioUrl, CancellationToken cancellationToken)
+    {
+#if ANDROID
+        await PlayWithAndroidMediaAsync(audioUrl, cancellationToken);
+#elif WINDOWS
+        await PlayWithWindowsMediaAsync(audioUrl, cancellationToken);
+#else
+        throw new NotSupportedException("Professional audio playback is not configured on this platform.");
 #endif
     }
 
@@ -192,6 +270,61 @@ public sealed class AudioGuideService
         }
     }
 
+    private async Task PlayWithWindowsMediaAsync(string audioUrl, CancellationToken cancellationToken)
+    {
+        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var mediaPlayer = new WinMediaPlayer();
+        _windowsMediaPlayer = mediaPlayer;
+
+        TypedEventHandler<WinMediaPlayer, object>? endedHandler = null;
+        TypedEventHandler<WinMediaPlayer, Windows.Media.Playback.MediaPlayerFailedEventArgs>? failedHandler = null;
+
+        endedHandler = (_, _) => completion.TrySetResult(true);
+        failedHandler = (_, args) => completion.TrySetException(new InvalidOperationException(args.ErrorMessage));
+
+        mediaPlayer.MediaEnded += endedHandler;
+        mediaPlayer.MediaFailed += failedHandler;
+        mediaPlayer.Source = WinMediaSource.CreateFromUri(new Uri(audioUrl));
+
+        using var registration = cancellationToken.Register(() =>
+        {
+            try
+            {
+                mediaPlayer.Pause();
+                mediaPlayer.Source = null;
+            }
+            catch
+            {
+            }
+
+            completion.TrySetCanceled(cancellationToken);
+        });
+
+        try
+        {
+            mediaPlayer.Play();
+            await completion.Task.WaitAsync(cancellationToken);
+        }
+        finally
+        {
+            mediaPlayer.MediaEnded -= endedHandler;
+            mediaPlayer.MediaFailed -= failedHandler;
+
+            try
+            {
+                mediaPlayer.Source = null;
+                mediaPlayer.Dispose();
+            }
+            catch
+            {
+            }
+
+            if (ReferenceEquals(_windowsMediaPlayer, mediaPlayer))
+            {
+                _windowsMediaPlayer = null;
+            }
+        }
+    }
 #endif
 
 #if ANDROID
@@ -241,6 +374,75 @@ public sealed class AudioGuideService
             tts?.Stop();
             tts?.Shutdown();
             tts?.Dispose();
+        }
+    }
+
+    private async Task PlayWithAndroidMediaAsync(string audioUrl, CancellationToken cancellationToken)
+    {
+        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var mediaPlayer = new AndroidMediaPlayer();
+        _androidMediaPlayer = mediaPlayer;
+
+        EventHandler? preparedHandler = null;
+        EventHandler? completedHandler = null;
+        EventHandler<Android.Media.MediaPlayer.ErrorEventArgs>? errorHandler = null;
+
+        preparedHandler = (_, _) => mediaPlayer.Start();
+        completedHandler = (_, _) => completion.TrySetResult(true);
+        errorHandler = (_, args) =>
+        {
+            args.Handled = true;
+            completion.TrySetException(new InvalidOperationException("Android professional audio playback failed."));
+        };
+
+        mediaPlayer.Prepared += preparedHandler;
+        mediaPlayer.Completion += completedHandler;
+        mediaPlayer.Error += errorHandler;
+
+        using var cancellationRegistration = cancellationToken.Register(() =>
+        {
+            try
+            {
+                if (mediaPlayer.IsPlaying)
+                {
+                    mediaPlayer.Stop();
+                }
+            }
+            catch
+            {
+            }
+
+            completion.TrySetCanceled(cancellationToken);
+        });
+
+        try
+        {
+            var mediaUri = AndroidNetUri.Parse(audioUrl) ?? throw new InvalidOperationException("Android audio URL is invalid.");
+            mediaPlayer.SetAudioStreamType(Android.Media.Stream.Music);
+            mediaPlayer.SetDataSource(Android.App.Application.Context, mediaUri);
+            mediaPlayer.PrepareAsync();
+            await completion.Task.WaitAsync(cancellationToken);
+        }
+        finally
+        {
+            mediaPlayer.Prepared -= preparedHandler;
+            mediaPlayer.Completion -= completedHandler;
+            mediaPlayer.Error -= errorHandler;
+
+            try
+            {
+                mediaPlayer.Reset();
+                mediaPlayer.Release();
+                mediaPlayer.Dispose();
+            }
+            catch
+            {
+            }
+
+            if (ReferenceEquals(_androidMediaPlayer, mediaPlayer))
+            {
+                _androidMediaPlayer = null;
+            }
         }
     }
 
@@ -304,6 +506,46 @@ public sealed class AudioGuideService
         _playbackCts?.Cancel();
         _playbackCts?.Dispose();
         _playbackCts = null;
+
+#if WINDOWS
+        if (_windowsMediaPlayer is not null)
+        {
+            try
+            {
+                _windowsMediaPlayer.Pause();
+                _windowsMediaPlayer.Source = null;
+                _windowsMediaPlayer.Dispose();
+            }
+            catch
+            {
+            }
+
+            _windowsMediaPlayer = null;
+        }
+#endif
+
+#if ANDROID
+        if (_androidMediaPlayer is not null)
+        {
+            try
+            {
+                if (_androidMediaPlayer.IsPlaying)
+                {
+                    _androidMediaPlayer.Stop();
+                }
+
+                _androidMediaPlayer.Reset();
+                _androidMediaPlayer.Release();
+                _androidMediaPlayer.Dispose();
+            }
+            catch
+            {
+            }
+
+            _androidMediaPlayer = null;
+        }
+#endif
+
         _currentPoi = null;
         _state = AudioGuidePlaybackState.Idle;
     }

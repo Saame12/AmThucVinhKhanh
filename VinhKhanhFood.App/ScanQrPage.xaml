@@ -30,17 +30,27 @@
                     VerticalOptions="Center" />
         </Grid>
 
-        <Border Margin="20"
-                Padding="14,12"
-                BackgroundColor="#CC08111F"
-                StrokeThickness="0"
-                StrokeShape="RoundRectangle 18"
-                VerticalOptions="End">
-            <Label x:Name="ScanStatusLabel"
-                   FontSize="13"
-                   FontAttributes="Bold"
-                   HorizontalTextAlignment="Center"
-                   TextColor="White" />
-        </Border>
+        <VerticalStackLayout Margin="20"
+                             Spacing="12"
+                             VerticalOptions="End">
+            <Button x:Name="ManualQrButton"
+                    HeightRequest="48"
+                    CornerRadius="18"
+                    BackgroundColor="#E85D2A"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    Clicked="OnManualQrClicked" />
+
+            <Border Padding="14,12"
+                    BackgroundColor="#CC08111F"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 18">
+                <Label x:Name="ScanStatusLabel"
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center"
+                       TextColor="White" />
+            </Border>
+        </VerticalStackLayout>
     </Grid>
 </ContentPage>

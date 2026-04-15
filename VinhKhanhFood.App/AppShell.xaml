@@ -11,19 +11,19 @@
     TabBarUnselectedColor="#808080">
 
     <TabBar>
-        <Tab x:Name="MapTab" Title="Map" Icon="dotnet_bot.png">
+        <Tab x:Name="MapTab" Route="MapTab" Title="Map" Icon="dotnet_bot.png">
             <ShellContent ContentTemplate="{DataTemplate local:MainPage}" />
         </Tab>
 
-        <Tab x:Name="ExploreTab" Title="Explore" Icon="dotnet_bot.png">
+        <Tab x:Name="ExploreTab" Route="ExploreTab" Title="Explore" Icon="dotnet_bot.png">
             <ShellContent ContentTemplate="{DataTemplate local:ExplorePage}" />
         </Tab>
 
-        <Tab x:Name="ScanTab" Title="Scan" Icon="dotnet_bot.png">
+        <Tab x:Name="ScanTab" Route="ScanTab" Title="Scan" Icon="dotnet_bot.png">
             <ShellContent ContentTemplate="{DataTemplate local:ScanQrPage}" />
         </Tab>
 
-        <Tab x:Name="SettingsTab" Title="Settings" Icon="dotnet_bot.png">
+        <Tab x:Name="SettingsTab" Route="SettingsTab" Title="Settings" Icon="dotnet_bot.png">
             <ShellContent ContentTemplate="{DataTemplate local:SettingsPage}" />
         </Tab>
     </TabBar>

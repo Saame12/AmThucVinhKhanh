@@ -1,10 +1,15 @@
-﻿@model List<VinhKhanhFood.Admin.Models.User>
+@model List<VinhKhanhFood.Admin.Models.User>
 
 @{
     ViewData["Title"] = "Quản lý User";
 }
 
 <h2 class="mb-3">👤 Quản lý người dùng</h2>
+
+@if (TempData["Error"] is string errorMessage)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
 
 <table class="table table-bordered table-hover">
     <thead class="table-dark">
@@ -13,7 +18,8 @@
             <th>Username</th>
             <th>Họ tên</th>
             <th>Role</th>
-            <th>Status</th>
+            <th>Tài khoản</th>
+            <th>Hiện diện</th>
             <th>Hành động</th>
         </tr>
     </thead>
@@ -49,17 +55,31 @@
                     }
                 </td>
                 <td>
-                    @if (u.Status == "Active")
+                    @if (u.OnlineStatus == "Online")
                     {
-                        <a asp-action="Block" asp-route-id="@u.Id" class="btn btn-danger btn-sm">
-                            🔒 Block
-                        </a>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Online</span>
                     }
                     else
                     {
-                        <a asp-action="Unblock" asp-route-id="@u.Id" class="btn btn-success btn-sm">
-                            🔓 Unblock
-                        </a>
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Offline</span>
+                    }
+                </td>
+                <td>
+                    @if (u.Role != "Admin" && u.Status == "Active")
+                    {
+                        <a asp-action="Block" asp-route-id="@u.Id" class="btn btn-danger btn-sm">🔒 Block</a>
+                    }
+                    else if (u.Role != "Admin")
+                    {
+                        <a asp-action="Unblock" asp-route-id="@u.Id" class="btn btn-success btn-sm">🔓 Unblock</a>
+                    }
+
+                    @if (u.Role != "Admin")
+                    {
+                        <a asp-action="Delete"
+                           asp-route-id="@u.Id"
+                           class="btn btn-outline-danger btn-sm ms-1"
+                           onclick="return confirm('Xóa tài khoản này?');">🗑 Delete</a>
                     }
                 </td>
             </tr>

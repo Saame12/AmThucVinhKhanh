@@ -81,6 +81,34 @@
                             TextColor="White"
                             FontAttributes="Bold"
                             Clicked="OnAccountActionClicked" />
+
+                    <Border x:Name="VipOfferBorder"
+                            BackgroundColor="#FFF7ED"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 20"
+                            Padding="16"
+                            IsVisible="False">
+                        <VerticalStackLayout Spacing="10">
+                            <Label x:Name="VipTitleLabel"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label x:Name="VipSubtitleLabel"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label x:Name="VipStatusLabel"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   TextColor="#C2410C" />
+                            <Button x:Name="VipActionButton"
+                                    HeightRequest="46"
+                                    CornerRadius="16"
+                                    BackgroundColor="#E85D2A"
+                                    TextColor="White"
+                                    FontAttributes="Bold"
+                                    Clicked="OnVipActionClicked" />
+                        </VerticalStackLayout>
+                    </Border>
                 </VerticalStackLayout>
             </Border>
 

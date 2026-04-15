@@ -1,4 +1,4 @@
-﻿@model VinhKhanhFood.API.Models.FoodLocation
+@model VinhKhanhFood.API.Models.FoodLocation
 
 @{
     ViewData["Title"] = "Create New POI";
@@ -23,6 +23,11 @@
                         <input name="Name_EN" class="form-control" placeholder="Example: Thao Snail Restaurant" />
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label">Location Name (Chinese)</label>
+                        <input name="Name_ZH" class="form-control" placeholder="示例：涛螺餐厅" />
+                    </div>
+
                     <div class="row">
                         <div class="col">
                             <label class="form-label">Latitude</label>
@@ -42,32 +47,47 @@
             </div>
 
             <div class="col-md-5">
-                <div class="card bg-light p-3 shadow-sm border-0">
+                <div class="card bg-light p-3 shadow-sm border-0 mb-3">
+                    <h5 class="text-success border-bottom pb-2"><i class="bi bi-soundwave"></i> Default Audio</h5>
+                    <p class="text-muted small mb-3">Owner chỉ cần nhập mô tả. App sẽ dùng phần mô tả này làm audio mặc định bằng TTS khi user mở POI hoặc quét QR.</p>
 
-                    <h5 class="text-success border-bottom pb-2"><i class="bi bi-mic"></i> Audio Guide (MP3)</h5>
-                   
                     <div class="mb-3">
                         <label>Mô tả (Vietnamese)</label>
-                        <textarea name="Description" class="form-control"></textarea>
+                        <textarea name="Description" class="form-control" rows="3"></textarea>
                     </div>
 
                     <div class="mb-3">
-                        <label class="fw-bold">🎧 Tiếng Việt:</label>
+                        <label>Description (English)</label>
+                        <textarea name="Description_EN" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>描述 (Chinese)</label>
+                        <textarea name="Description_ZH" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="card bg-light p-3 shadow-sm border-0">
+                    <h5 class="text-warning border-bottom pb-2"><i class="bi bi-stars"></i> Professional Audio</h5>
+                    <p class="text-muted small mb-3">Nếu owner tự upload audio thì audio này sẽ được hiểu là audio chuyên nghiệp và có thể khóa quyền nghe trong app.</p>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">🎧 Tiếng Việt</label>
                         <input type="file" name="audioViFile" class="form-control" accept="audio/*" />
                     </div>
 
                     <div class="mb-3">
-                        <label class="fw-bold">🎧 English:</label>
+                        <label class="fw-bold">🎧 English</label>
                         <input type="file" name="audioEnFile" class="form-control" accept="audio/*" />
                     </div>
 
                     <div class="mb-3">
-                        <label class="fw-bold">🎧 中文 (Chinese):</label>
+                        <label class="fw-bold">🎧 中文</label>
                         <input type="file" name="audioZhFile" class="form-control" accept="audio/*" />
                     </div>
 
-                    <div class="alert alert-info py-2">
-                        <small><i class="bi bi-info-circle"></i> Chỉ chấp nhận định dạng .mp3, .wav</small>
+                    <div class="alert alert-info py-2 mb-0">
+                        <small><i class="bi bi-info-circle"></i> Chấp nhận .mp3, .wav. QR của POI sẽ luôn mở audio mặc định.</small>
                     </div>
                 </div>
             </div>

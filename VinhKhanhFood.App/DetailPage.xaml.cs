@@ -8,6 +8,8 @@ public partial class DetailPage : ContentPage
     private readonly FoodLocation _currentLocation;
     private readonly bool _autoPlayAudio;
     private readonly AudioGuideService _audioGuideService = App.AudioGuide;
+    private readonly UsageTrackingService _usageTrackingService = new();
+    private bool _hasTrackedView;
 
     public DetailPage(FoodLocation location, bool autoPlayAudio = false)
     {
@@ -25,7 +27,14 @@ public partial class DetailPage : ContentPage
     {
         base.OnAppearing();
         LocalizationService.LanguageChanged += OnLanguageChanged;
+        App.Auth.SessionChanged += OnSessionChanged;
         _audioGuideService.StateChanged += OnAudioStateChanged;
+
+        if (!_hasTrackedView)
+        {
+            _hasTrackedView = true;
+            await _usageTrackingService.TrackPoiDetailViewAsync(_currentLocation.Id);
+        }
 
         if (_autoPlayAudio)
         {
@@ -37,10 +46,20 @@ public partial class DetailPage : ContentPage
     {
         base.OnDisappearing();
         LocalizationService.LanguageChanged -= OnLanguageChanged;
+        App.Auth.SessionChanged -= OnSessionChanged;
         _audioGuideService.StateChanged -= OnAudioStateChanged;
     }
 
     private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateLocalizedTexts();
+            UpdateContent();
+        });
+    }
+
+    private void OnSessionChanged(object? sender, UserSession? e)
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
@@ -63,6 +82,8 @@ public partial class DetailPage : ContentPage
     {
         NameLabel.Text = _currentLocation.DisplayName;
         DescriptionLabel.Text = _currentLocation.DisplayDescription;
+        ProfessionalAudioCard.IsVisible = _currentLocation.HasProfessionalAudio;
+        UpdateProfessionalAudioUi();
         UpdateAudioStateUi();
     }
 
@@ -73,12 +94,12 @@ public partial class DetailPage : ContentPage
         HeaderTitleLabel.Text = GetHeaderTitleText();
         AudioSectionTitleLabel.Text = LocalizationService.GetString("Audio Guide");
         GuideBadgeLabel.Text = GetGuideBadgeText();
-        ScanBadgeLabel.Text = "QR";
         PlayAudioButton.Text = LocalizationService.GetString("Play");
         CancelAudioButton.Text = LocalizationService.GetString("Cancel");
-        CopyQrButton.Text = GetQrCopyLabel();
-        QrTitleLabel.Text = GetQrTitle();
-        QrInstructionLabel.Text = GetQrInstruction();
+        ProfessionalAudioTitleLabel.Text = GetProfessionalAudioTitle();
+        ProfessionalAudioSubtitleLabel.Text = GetProfessionalAudioSubtitle();
+        ProfessionalAudioBadgeLabel.Text = GetProfessionalAudioBadge();
+        UnlockProfessionalAudioButton.Text = GetProfessionalAudioButtonText();
     }
 
     private void UpdateAudioStateUi()
@@ -90,6 +111,17 @@ public partial class DetailPage : ContentPage
 
         PlayAudioButton.IsEnabled = !isCurrentPoiPlaying;
         CancelAudioButton.IsEnabled = _audioGuideService.CurrentPoi?.Id == _currentLocation.Id;
+    }
+
+    private void UpdateProfessionalAudioUi()
+    {
+        var isVip = App.Auth.CurrentSession?.IsVip == true;
+        UnlockProfessionalAudioButton.IsEnabled = _currentLocation.HasProfessionalAudio;
+        UnlockProfessionalAudioButton.BackgroundColor = Color.FromArgb(isVip ? "#E85D2A" : "#FEF3C7");
+        UnlockProfessionalAudioButton.TextColor = isVip ? Colors.White : Color.FromArgb("#92400E");
+        ProfessionalAudioSubtitleLabel.Text = GetProfessionalAudioSubtitle();
+        ProfessionalAudioBadgeLabel.Text = GetProfessionalAudioBadge();
+        UnlockProfessionalAudioButton.Text = GetProfessionalAudioButtonText();
     }
 
     private async Task PlayCurrentPoiAudioAsync()
@@ -111,10 +143,34 @@ public partial class DetailPage : ContentPage
         _audioGuideService.Cancel();
     }
 
-    private async void OnCopyQrClicked(object sender, EventArgs e)
+    private async void OnProfessionalAudioClicked(object sender, EventArgs e)
     {
-        await Clipboard.Default.SetTextAsync(_currentLocation.QrAudioUri);
-        await DisplayAlert(LocalizationService.GetString("Info"), GetQrCopiedMessage(), LocalizationService.GetString("OK"));
+        if (!_currentLocation.HasProfessionalAudio)
+        {
+            return;
+        }
+
+        if (App.Auth.CurrentSession?.IsVip != true)
+        {
+            var shouldOpenSettings = await DisplayAlert(
+                GetProfessionalAudioTitle(),
+                GetProfessionalAudioLockedMessage(),
+                GetOpenSettingsText(),
+                LocalizationService.GetString("Cancel"));
+
+            if (shouldOpenSettings && Shell.Current is not null)
+            {
+                await Shell.Current.GoToAsync("//SettingsTab");
+            }
+
+            return;
+        }
+
+        var started = await _audioGuideService.PlayProfessionalAudioAsync(_currentLocation);
+        if (!started)
+        {
+            await DisplayAlert(LocalizationService.GetString("Info"), GetProfessionalAudioUnavailableText(), LocalizationService.GetString("OK"));
+        }
     }
 
     private async void OnBackClicked(object sender, EventArgs e)
@@ -125,49 +181,76 @@ public partial class DetailPage : ContentPage
     private static string GetHeaderEyebrowText() => LocalizationService.CurrentLanguage switch
     {
         "en" => "POI detail",
-        "zh" => "POI 详情",
-        _ => "Chi tiết POI"
+        "zh" => "POI \u8BE6\u60C5",
+        _ => "Chi tiet POI"
     };
 
     private static string GetHeaderTitleText() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "Audio and QR",
-        "zh" => "音频与 QR",
-        _ => "Audio và QR"
+        "en" => "Audio guide",
+        "zh" => "\u8BED\u97F3\u8BB2\u89E3",
+        _ => "Thuyet minh audio"
     };
 
     private static string GetGuideBadgeText() => LocalizationService.CurrentLanguage switch
     {
         "en" => "Guide",
-        "zh" => "导览",
+        "zh" => "\u5BFC\u89C8",
         _ => "Guide"
     };
 
-    private static string GetQrTitle() => LocalizationService.CurrentLanguage switch
+    private static string GetProfessionalAudioTitle() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "POI QR audio",
-        "zh" => "POI 音频二维码",
-        _ => "Mã QR audio của quán"
+        "en" => "Professional audio",
+        "zh" => "\u4E13\u4E1A\u97F3\u9891",
+        _ => "Audio chuyen nghiep"
     };
 
-    private static string GetQrInstruction() => LocalizationService.CurrentLanguage switch
+    private static string GetProfessionalAudioSubtitle() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "Each venue can use this QR. When scanned, the app opens this POI and starts the audio guide automatically.",
-        "zh" => "每个店铺都可以使用这个二维码。扫描后，应用会打开对应 POI 并自动播放语音介绍。",
-        _ => "Mỗi quán có thể dùng mã QR này. Khi quét, app sẽ mở đúng POI và tự phát phần thuyết minh."
+        "en" => App.Auth.CurrentSession?.IsVip == true
+            ? "Your VIP plan is active. You can now play the owner-uploaded professional audio."
+            : "Owner-uploaded professional audio is available after upgrading this account to VIP.",
+        "zh" => App.Auth.CurrentSession?.IsVip == true
+            ? "\u60A8\u7684 VIP \u5957\u9910\u5DF2\u751F\u6548\uff0c\u73B0\u5728\u53EF\u4EE5\u64AD\u653E\u5E97\u4E3B\u4E0A\u4F20\u7684\u4E13\u4E1A\u97F3\u9891\u3002"
+            : "\u5347\u7EA7\u6B64\u8D26\u6237\u4E3A VIP \u540E\uff0c\u5373\u53EF\u64AD\u653E\u5E97\u4E3B\u4E0A\u4F20\u7684\u4E13\u4E1A\u97F3\u9891\u3002",
+        _ => App.Auth.CurrentSession?.IsVip == true
+            ? "Goi VIP da hoat dong. Ban co the nghe audio chuyen nghiep do owner tai len."
+            : "Audio chuyen nghiep do owner tai len se duoc mo khoa sau khi nang cap tai khoan len VIP."
     };
 
-    private static string GetQrCopyLabel() => LocalizationService.CurrentLanguage switch
+    private static string GetProfessionalAudioBadge() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "Copy QR link",
-        "zh" => "复制二维码链接",
-        _ => "Sao chép link QR"
+        "en" => App.Auth.CurrentSession?.IsVip == true ? "VIP active" : "Premium",
+        "zh" => App.Auth.CurrentSession?.IsVip == true ? "VIP \u5DF2\u5F00\u901A" : "\u4ED8\u8D39",
+        _ => App.Auth.CurrentSession?.IsVip == true ? "VIP dang mo" : "Tra phi"
     };
 
-    private static string GetQrCopiedMessage() => LocalizationService.CurrentLanguage switch
+    private static string GetProfessionalAudioButtonText() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "The QR link has been copied.",
-        "zh" => "二维码链接已复制。",
-        _ => "Đã sao chép link QR."
+        "en" => App.Auth.CurrentSession?.IsVip == true ? "Play professional audio" : "Buy VIP in Settings",
+        "zh" => App.Auth.CurrentSession?.IsVip == true ? "\u64AD\u653E\u4E13\u4E1A\u97F3\u9891" : "\u524D\u5F80\u8BBE\u7F6E\u5F00\u901A VIP",
+        _ => App.Auth.CurrentSession?.IsVip == true ? "Phat audio chuyen nghiep" : "Mo VIP trong Cai dat"
+    };
+
+    private static string GetProfessionalAudioLockedMessage() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "Open Settings to activate VIP and unlock this professional audio track.",
+        "zh" => "\u8BF7\u524D\u5F80\u8BBE\u7F6E\u5F00\u901A VIP\uff0C\u518D\u89E3\u9501\u8FD9\u6761\u4E13\u4E1A\u97F3\u9891\u3002",
+        _ => "Hay mo Cai dat de kich hoat VIP va nghe audio chuyen nghiep nay."
+    };
+
+    private static string GetProfessionalAudioUnavailableText() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "This POI does not have a professional audio file yet.",
+        "zh" => "\u8BE5 POI \u6682\u65F6\u6CA1\u6709\u4E13\u4E1A\u97F3\u9891\u6587\u4EF6\u3002",
+        _ => "POI nay chua co file audio chuyen nghiep."
+    };
+
+    private static string GetOpenSettingsText() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "Open Settings",
+        "zh" => "\u6253\u5F00\u8BBE\u7F6E",
+        _ => "Mo Cai dat"
     };
 }

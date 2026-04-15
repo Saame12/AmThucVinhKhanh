@@ -1,4 +1,4 @@
-﻿@model IEnumerable<VinhKhanhFood.API.Models.FoodLocation>
+@model IEnumerable<VinhKhanhFood.API.Models.FoodLocation>
 
 <div class="container-fluid pt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -17,7 +17,8 @@
                         <th>Image</th>
                         <th>Name (VN)</th>
                         <th>Coordinates</th>
-                        <th>Audio Guide</th>
+                        <th>Audio</th>
+                        <th>QR</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -28,14 +29,13 @@
                             <td>
                                 <span class="badge
                                     @(item.Status == "Approved" ? "bg-success" :
-                                      item.Status == "Pending" ? "bg-warning" : "bg-danger")">
+                                      item.Status == "Pending" ? "bg-warning text-dark" : "bg-danger")">
                                     @item.Status
                                 </span>
                             </td>
                             <td>
                                 @if (!string.IsNullOrEmpty(item.ImageUrl))
                                 {
-                                    @* Giả sử API của bạn chạy ở cổng 5020. Hãy đổi lại nếu cổng khác *@
                                     var apiUrl = "http://localhost:5020/images/";
                                     <img src="@(apiUrl + item.ImageUrl)"
                                          width="60"
@@ -57,30 +57,26 @@
                             </td>
                             <td><small class="badge bg-light text-dark">@item.Latitude, @item.Longitude</small></td>
                             <td>
-                                @if (!string.IsNullOrEmpty(item.AudioUrl))
+                                @if (item.HasDefaultAudio)
                                 {
-                                    <span class="badge bg-success" title="Tiếng Việt">VN</span>
+                                    <span class="badge bg-success" title="Audio mặc định từ mô tả">Default</span>
                                 }
-                                @if (!string.IsNullOrEmpty(item.AudioUrl_EN))
+                                @if (item.HasProfessionalAudio)
                                 {
-                                    <span class="badge bg-info" title="English">EN</span>
+                                    <span class="badge bg-warning text-dark" title="Audio chuyên nghiệp owner upload">Pro</span>
                                 }
-                                @if (!string.IsNullOrEmpty(item.AudioUrl_ZH))
-                                {
-                                    <span class="badge bg-danger" title="Chinese">ZH</span>
-                                }
+                            </td>
+                            <td>
+                                <div class="small fw-semibold">@item.QrCodeLabel</div>
+                                <a asp-action="Qr" asp-route-id="@item.Id" class="btn btn-sm btn-outline-dark mt-1">View QR</a>
                             </td>
                             <td class="text-center">
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Edit</a>
                                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">Delete</a>
-                                <!-- 🔥 NEW: Approve / Reject -->
-                                @if (Context.Session.GetString("UserRole") == "Admin")
+                                @if (Context.Session.GetString("UserRole") == "Admin" && item.Status == "Pending")
                                 {
-                                    @if (item.Status == "Pending")
-                                    {
-                                        <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
-                                        <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
-                                    }
+                                    <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
+                                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
                                 }
                             </td>
                         </tr>

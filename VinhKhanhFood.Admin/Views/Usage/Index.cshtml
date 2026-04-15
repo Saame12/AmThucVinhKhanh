@@ -1,6 +1,11 @@
-﻿@model List<VinhKhanhFood.Admin.Models.UsageHistory>
+@model List<VinhKhanhFood.Admin.Models.UsageHistory>
 
 <h2>📊 Usage History</h2>
+
+@if (TempData["Error"] is string errorMessage)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
 
 <table class="table table-bordered">
     <thead>
@@ -8,8 +13,8 @@
             <th>User</th>
             <th>Action</th>
             <th>POI</th>
-            <th>Time</th>
             <th>Role</th>
+            <th>Time</th>
         </tr>
     </thead>
     <tbody>
@@ -24,15 +29,23 @@
                     }
                     else if (item.Action == "EDIT")
                     {
-                        <span class="badge bg-warning">EDIT</span>
+                        <span class="badge bg-warning text-dark">EDIT</span>
                     }
                     else if (item.Action == "DELETE")
                     {
                         <span class="badge bg-danger">DELETE</span>
                     }
+                    else if (item.Action == "VIEW_DETAIL")
+                    {
+                        <span class="badge bg-primary">VIEW_DETAIL</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">@item.Action</span>
+                    }
                 </td>
+                <td>@item.PoiName (@item.PoiId)</td>
                 <td>@item.Role</td>
-                <td>@item.PoiName</td>
                 <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
             </tr>
         }

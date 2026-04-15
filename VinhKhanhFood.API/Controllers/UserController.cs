@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VinhKhanhFood.API.Data;
 using VinhKhanhFood.API.Models;
+using VinhKhanhFood.API.Services;
 
 namespace VinhKhanhFood.API.Controllers;
 
@@ -10,20 +11,26 @@ namespace VinhKhanhFood.API.Controllers;
 public class UserController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly UserPresenceService _presenceService;
 
-    public UserController(AppDbContext context)
+    public UserController(AppDbContext context, UserPresenceService presenceService)
     {
         _context = context;
+        _presenceService = presenceService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<LoginResponse>>> GetUsers()
     {
-        return await _context.Users.ToListAsync();
+        var users = await _context.Users
+            .OrderByDescending(user => user.Id)
+            .ToListAsync();
+
+        return Ok(users.Select(ToResponse));
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<User>> GetUser(int id)
+    public async Task<ActionResult<LoginResponse>> GetUser(int id)
     {
         var user = await _context.Users.FindAsync(id);
         if (user is null)
@@ -31,7 +38,7 @@ public class UserController : ControllerBase
             return NotFound(new { message = "Không tìm thấy người dùng này." });
         }
 
-        return Ok(user);
+        return Ok(ToResponse(user));
     }
 
     [HttpPost("login")]
@@ -57,6 +64,7 @@ public class UserController : ControllerBase
             return BadRequest(new { message = "Tài khoản đã bị khóa." });
         }
 
+        _presenceService.MarkOnline(user.Id);
         return Ok(ToResponse(user));
     }
 
@@ -83,10 +91,53 @@ public class UserController : ControllerBase
             Password = request.Password,
             FullName = request.FullName.Trim(),
             Role = string.IsNullOrWhiteSpace(request.Role) ? "User" : request.Role.Trim(),
-            Status = "Active"
+            Status = "Active",
+            IsVip = false
         };
 
         _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        _presenceService.MarkOnline(user.Id);
+        return Ok(ToResponse(user));
+    }
+
+    [HttpPut("presence/{id:int}")]
+    public async Task<IActionResult> UpdatePresence(int id, [FromQuery] bool isOnline)
+    {
+        var userExists = await _context.Users.AnyAsync(user => user.Id == id);
+        if (!userExists)
+        {
+            return NotFound(new { message = "Không tìm thấy người dùng này." });
+        }
+
+        if (isOnline)
+        {
+            _presenceService.MarkOnline(id);
+        }
+        else
+        {
+            _presenceService.MarkOffline(id);
+        }
+
+        return Ok(new { id, onlineStatus = isOnline ? "Online" : "Offline" });
+    }
+
+    [HttpPost("vip/purchase/{id:int}")]
+    public async Task<ActionResult<LoginResponse>> PurchaseVip(int id)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user is null)
+        {
+            return NotFound(new { message = "KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng nÃ y." });
+        }
+
+        if (string.Equals(user.Status?.Trim(), "Blocked", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a." });
+        }
+
+        user.IsVip = true;
         await _context.SaveChangesAsync();
 
         return Ok(ToResponse(user));
@@ -102,6 +153,7 @@ public class UserController : ControllerBase
         }
 
         user.Status = "Blocked";
+        _presenceService.MarkOffline(id);
         await _context.SaveChangesAsync();
         return Ok();
     }
@@ -156,19 +208,27 @@ public class UserController : ControllerBase
             return NotFound(new { message = "Không tìm thấy người dùng này để xóa." });
         }
 
+        if (string.Equals(user.Role?.Trim(), "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "Không thể xóa tài khoản Admin." });
+        }
+
         _context.Users.Remove(user);
+        _presenceService.MarkOffline(id);
         await _context.SaveChangesAsync();
 
         return Ok(new { message = $"Đã xóa thành công người dùng có ID: {id}" });
     }
 
-    private static LoginResponse ToResponse(User user) =>
+    private LoginResponse ToResponse(User user) =>
         new()
         {
             Id = user.Id,
             Username = user.Username,
             FullName = user.FullName,
             Role = user.Role,
-            Status = user.Status
+            Status = user.Status,
+            OnlineStatus = _presenceService.GetStatus(user.Id),
+            IsVip = user.IsVip
         };
 }

@@ -1,8 +1,8 @@
 ﻿    namespace VinhKhanhFood.API.Models
     {
-        public class FoodLocation
-        {
-            public int Id { get; set; }
+    public class FoodLocation
+    {
+        public int Id { get; set; }
 
         // --- TIẾNG VIỆT (Mặc định) ---
             public string Name { get; set; } = string.Empty;
@@ -28,5 +28,19 @@
             public int? OwnerId { get; set; }
         // 🔥 NEW: trạng thái duyệt
         public string Status { get; set; } = "Pending";
+
+        public bool HasDefaultAudio =>
+            !string.IsNullOrWhiteSpace(Description) ||
+            !string.IsNullOrWhiteSpace(Description_EN) ||
+            !string.IsNullOrWhiteSpace(Description_ZH);
+
+        public bool HasProfessionalAudio =>
+            !string.IsNullOrWhiteSpace(AudioUrl) ||
+            !string.IsNullOrWhiteSpace(AudioUrl_EN) ||
+            !string.IsNullOrWhiteSpace(AudioUrl_ZH);
+
+        public string QrAudioUri => $"vinhkhanhfood://poi/{Id}";
+        public string QrCodeLabel => $"VK-POI-{Id:D4}";
+        public string QrCodeImageUrl => $"https://quickchart.io/qr?size=260&text={Uri.EscapeDataString(QrAudioUri)}";
     }
     }

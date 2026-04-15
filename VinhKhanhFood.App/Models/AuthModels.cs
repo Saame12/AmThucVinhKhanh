@@ -21,4 +21,6 @@ public sealed class UserSession
     public string FullName { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string OnlineStatus { get; set; } = "Offline";
+    public bool IsVip { get; set; }
 }

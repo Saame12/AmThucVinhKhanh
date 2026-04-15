@@ -26,6 +26,15 @@ public partial class App : Application
         }
     }
 
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        var window = base.CreateWindow(activationState);
+        window.Resumed += OnWindowResumed;
+        window.Stopped += OnWindowStopped;
+        window.Destroying += OnWindowDestroying;
+        return window;
+    }
+
     private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
     {
         if (_isReloadingShell)
@@ -36,20 +45,25 @@ public partial class App : Application
         _ = ReloadShellAsync();
     }
 
-    public static void ReceiveQrUri(string rawUri)
+    public static async Task<QrOpenResult> OpenQrAsync(string rawValue)
     {
-        if (!Uri.TryCreate(rawUri, UriKind.Absolute, out var uri))
+        if (!TryCreatePoiUri(rawValue, out var uri))
         {
-            return;
+            return QrOpenResult.Invalid;
         }
 
         if (Current is App app)
         {
-            _ = app.HandleIncomingUriAsync(uri);
-            return;
+            return await app.HandleIncomingUriAsync(uri);
         }
 
         _pendingUri = uri;
+        return QrOpenResult.Pending;
+    }
+
+    public static void ReceiveQrUri(string rawUri)
+    {
+        _ = OpenQrAsync(rawUri);
     }
 
     protected override void OnAppLinkRequestReceived(Uri uri)
@@ -58,19 +72,42 @@ public partial class App : Application
         base.OnAppLinkRequestReceived(uri);
     }
 
-    private async Task HandleIncomingUriAsync(Uri uri)
+    private async void OnWindowResumed(object? sender, EventArgs e)
+    {
+        await Auth.SetPresenceAsync(true);
+        Auth.StartPresenceHeartbeat();
+    }
+
+    private async void OnWindowStopped(object? sender, EventArgs e)
+    {
+        Auth.StopPresenceHeartbeat();
+        await Auth.SetPresenceAsync(false);
+    }
+
+    private async void OnWindowDestroying(object? sender, EventArgs e)
+    {
+        Auth.StopPresenceHeartbeat();
+        await Auth.SetPresenceAsync(false);
+    }
+
+    private async Task<QrOpenResult> HandleIncomingUriAsync(Uri uri)
     {
         if (!TryExtractPoiId(uri, out var poiId))
         {
-            return;
+            return QrOpenResult.Invalid;
         }
 
         var apiService = new ApiService();
         var locations = await apiService.GetFoodLocationsAsync();
+        if (locations.Count == 0)
+        {
+            return QrOpenResult.Unavailable;
+        }
+
         var poi = locations.FirstOrDefault(item => item.Id == poiId);
         if (poi is null)
         {
-            return;
+            return QrOpenResult.NotFound;
         }
 
         await MainThread.InvokeOnMainThreadAsync(async () =>
@@ -83,6 +120,8 @@ public partial class App : Application
             await Shell.Current.GoToAsync("//ExploreTab");
             await Shell.Current.Navigation.PushAsync(new DetailPage(poi, autoPlayAudio: true));
         });
+
+        return QrOpenResult.Success;
     }
 
     private async Task ReloadShellAsync()
@@ -128,5 +167,47 @@ public partial class App : Application
         }
 
         return int.TryParse(uri.AbsolutePath.Trim('/'), out poiId);
+    }
+
+    private static bool TryCreatePoiUri(string rawValue, out Uri uri)
+    {
+        uri = null!;
+
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return false;
+        }
+
+        var normalized = rawValue.Trim();
+
+        if (Uri.TryCreate(normalized, UriKind.Absolute, out var absoluteUri))
+        {
+            uri = absoluteUri;
+            return true;
+        }
+
+        if (normalized.StartsWith("VK-POI-", StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(normalized["VK-POI-".Length..], out var codePoiId))
+        {
+            uri = new Uri($"vinhkhanhfood://poi/{codePoiId}");
+            return true;
+        }
+
+        if (int.TryParse(normalized, out var numericPoiId))
+        {
+            uri = new Uri($"vinhkhanhfood://poi/{numericPoiId}");
+            return true;
+        }
+
+        return false;
+    }
+
+    public enum QrOpenResult
+    {
+        Success,
+        Invalid,
+        NotFound,
+        Unavailable,
+        Pending
     }
 }

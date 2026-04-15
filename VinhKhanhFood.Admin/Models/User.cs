@@ -8,6 +8,7 @@
         public string FullName { get; set; } = string.Empty;
         public string Role { get; set; } = "Vendor";
         public string? Status { get; set; }
+        public string OnlineStatus { get; set; } = "Offline";
 
     }
 }

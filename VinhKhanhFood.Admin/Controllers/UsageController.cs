@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Json;
 using VinhKhanhFood.Admin.Models;
+
 namespace VinhKhanhFood.Admin.Controllers
 {
     public class UsageController : Controller
@@ -14,17 +15,16 @@ namespace VinhKhanhFood.Admin.Controllers
 
         public async Task<IActionResult> Index()
         {
-            // 🔥 gọi API history
-            var data = await _http.GetFromJsonAsync<List<UsageHistory>>("Food/history");
-
-            // 🔥 NEW: filter hôm nay
-            var today = DateTime.Today;
-
-            data = data
-                .Where(x => x.CreatedAt.Date == today)
-                .ToList();
-
-            return View(data);
+            try
+            {
+                var data = await _http.GetFromJsonAsync<List<UsageHistory>>("Food/history");
+                return View(data ?? new List<UsageHistory>());
+            }
+            catch
+            {
+                TempData["Error"] = "Không thể tải lịch sử sử dụng vì API chưa chạy.";
+                return View(new List<UsageHistory>());
+            }
         }
     }
 }

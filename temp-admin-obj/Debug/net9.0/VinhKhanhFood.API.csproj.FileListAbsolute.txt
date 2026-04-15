@@ -1,0 +1,9 @@
+C:\Users\sangl\source\repos\AmThucVinhKhanhnew\temp-admin-obj\Debug\net9.0\VinhKhanhFood.API.csproj.AssemblyReference.cache
+C:\Users\sangl\source\repos\AmThucVinhKhanhnew\temp-admin-obj\Debug\net9.0\rpswa.dswa.cache.json
+C:\Users\sangl\source\repos\AmThucVinhKhanhnew\temp-admin-obj\Debug\net9.0\VinhKhanhFood.API.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\sangl\source\repos\AmThucVinhKhanhnew\temp-admin-obj\Debug\net9.0\VinhKhanhFood.API.AssemblyInfoInputs.cache
+C:\Users\sangl\source\repos\AmThucVinhKhanhnew\temp-admin-obj\Debug\net9.0\VinhKhanhFood.API.AssemblyInfo.cs
+C:\Users\sangl\source\repos\AmThucVinhKhanhnew\temp-admin-obj\Debug\net9.0\VinhKhanhFood.API.csproj.CoreCompileInputs.cache
+C:\Users\sangl\source\repos\AmThucVinhKhanhnew\temp-admin-obj\Debug\net9.0\VinhKhanhFood.API.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\sangl\source\repos\AmThucVinhKhanhnew\temp-admin-obj\Debug\net9.0\VinhKhanhFood.API.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\sangl\source\repos\AmThucVinhKhanhnew\temp-admin-obj\Debug\net9.0\VinhKhanhFood.API.sourcelink.json

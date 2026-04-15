@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using VinhKhanhFood.API.Data;
+using VinhKhanhFood.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Thêm chính sách CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -12,14 +13,26 @@ builder.Services.AddCors(options =>
                         .AllowAnyHeader());
 });
 
-// Đăng ký dịch vụ Database sử dụng Connection String từ file appsettings.json
 builder.Services.AddDbContext<VinhKhanhFood.API.Data.AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddSingleton<UserPresenceService>();
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHostedService<AndroidAdbReverseHostedService>();
+}
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DbInitializer.EnsureSchemaAsync(dbContext);
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -27,19 +40,15 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-// Kích hoạt CORS
 app.UseCors("AllowAll");
-
-app.UseStaticFiles(); // cho phép truy cập các fiel tĩnh trong wwwroot
-//app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseAuthorization();
 app.MapControllers();
 
-
-// REDIRECT: Khi mở web sẽ vào thẳng trang giao diện
-app.MapGet("/", async (context) =>
+app.MapGet("/", async context =>
 {
     context.Response.Redirect("/scalar/v1");
+    await Task.CompletedTask;
 });
 
 app.Run();

@@ -41,8 +41,9 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0-android|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)'=='Debug' and '$(TargetFramework)'=='net9.0-android'">
 	  <JavaMaximumHeapSize>2G</JavaMaximumHeapSize>
+	  <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0-android|AnyCPU'">
