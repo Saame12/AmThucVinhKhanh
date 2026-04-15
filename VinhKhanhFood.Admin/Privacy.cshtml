@@ -1,0 +1,68 @@
+﻿@model List<VinhKhanhFood.Admin.Models.User>
+
+@{
+    ViewData["Title"] = "Quản lý User";
+}
+
+<h2 class="mb-3">👤 Quản lý người dùng</h2>
+
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Họ tên</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.Id</td>
+                <td>@u.Username</td>
+                <td>@u.FullName</td>
+                <td>
+                    @if (u.Role == "Admin")
+                    {
+                        <span class="badge bg-danger">Admin</span>
+                    }
+                    else if (u.Role == "Owner")
+                    {
+                        <span class="badge bg-primary">Owner</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">User</span>
+                    }
+                </td>
+                <td>
+                    @if (u.Status == "Active")
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Blocked</span>
+                    }
+                </td>
+                <td>
+                    @if (u.Status == "Active")
+                    {
+                        <a asp-action="Block" asp-route-id="@u.Id" class="btn btn-danger btn-sm">
+                            🔒 Block
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-action="Unblock" asp-route-id="@u.Id" class="btn btn-success btn-sm">
+                            🔓 Unblock
+                        </a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
