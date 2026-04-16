@@ -173,10 +173,17 @@ namespace VinhKhanhFood.API.Controllers
                 return NotFound(new { message = "Không tìm thấy POI." });
             }
 
+            var isGuestTraveler = string.Equals(request.Role?.Trim(), "TravelerGuest", StringComparison.OrdinalIgnoreCase) ||
+                                  string.Equals(request.Role?.Trim(), "Traveler", StringComparison.OrdinalIgnoreCase);
+            var effectiveUserName = isGuestTraveler
+                ? BuildGuestDisplayName(HttpContext.Connection.RemoteIpAddress?.ToString(), request.GuestId)
+                : string.IsNullOrWhiteSpace(request.UserName) ? "Guest" : request.UserName.Trim();
+            var effectiveRole = isGuestTraveler ? "TravelerGuest" : string.IsNullOrWhiteSpace(request.Role) ? "Traveler" : request.Role.Trim();
+
             await AddUsageHistoryAsync(
                 userId: request.UserId,
-                userName: string.IsNullOrWhiteSpace(request.UserName) ? "Guest" : request.UserName.Trim(),
-                role: string.IsNullOrWhiteSpace(request.Role) ? "Traveler" : request.Role.Trim(),
+                userName: effectiveUserName,
+                role: effectiveRole,
                 action: "VIEW_DETAIL",
                 poiId: poi.Id,
                 poiName: poi.Name);
@@ -199,6 +206,18 @@ namespace VinhKhanhFood.API.Controllers
 
             await _context.SaveChangesAsync();
         }
+
+        private static string BuildGuestDisplayName(string? remoteIp, string? guestId)
+        {
+            var normalizedIp = string.IsNullOrWhiteSpace(remoteIp)
+                ? "unknown-ip"
+                : remoteIp.Replace(":", "-").Replace("%", "-").Trim();
+            var suffix = string.IsNullOrWhiteSpace(guestId)
+                ? "guest"
+                : (guestId.Trim().Length > 6 ? guestId.Trim()[^6..] : guestId.Trim());
+
+            return $"guid-{normalizedIp}-{suffix}";
+        }
     }
 
     public sealed class PoiViewHistoryRequest
@@ -206,6 +225,7 @@ namespace VinhKhanhFood.API.Controllers
         public int UserId { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
+        public string? GuestId { get; set; }
         public int PoiId { get; set; }
     }
 }

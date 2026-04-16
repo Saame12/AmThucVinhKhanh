@@ -15,6 +15,7 @@ public sealed class AuthService
     private const string PreferenceUserStatus = "UserStatus";
     private const string PreferenceOnlineStatus = "UserOnlineStatus";
     private const string PreferenceIsVip = "UserIsVip";
+    private const string PreferenceGuestId = "GuestId";
 
     private readonly HttpClient _httpClient;
     private PeriodicTimer? _presenceTimer;
@@ -29,17 +30,14 @@ public sealed class AuthService
 
         _httpClient = new HttpClient(handler);
         CurrentSession = LoadSessionFromPreferences();
-
-        if (CurrentSession is not null)
-        {
-            StartPresenceHeartbeat();
-            _ = SetPresenceAsync(true);
-        }
+        StartPresenceHeartbeat();
+        _ = SetPresenceAsync(true);
     }
 
     public event EventHandler<UserSession?>? SessionChanged;
 
     public UserSession? CurrentSession { get; private set; }
+    public string GuestId { get; } = GetOrCreateGuestId();
 
     public bool IsLoggedIn => CurrentSession is not null;
 
@@ -64,6 +62,7 @@ public sealed class AuthService
                 return (false, LocalizationService.GetString("AuthUnexpectedResponse"));
             }
 
+            await UpdateGuestPresenceAsync(false, cancellationToken);
             SaveSession(session);
             await SetPresenceAsync(true, cancellationToken);
             return (true, null);
@@ -106,6 +105,7 @@ public sealed class AuthService
                 return (false, LocalizationService.GetString("AuthUnexpectedResponse"));
             }
 
+            await UpdateGuestPresenceAsync(false, cancellationToken);
             SaveSession(session);
             await SetPresenceAsync(true, cancellationToken);
             return (true, null);
@@ -176,50 +176,56 @@ public sealed class AuthService
 
         CurrentSession = null;
         SessionChanged?.Invoke(this, null);
+        StartPresenceHeartbeat();
+        _ = SetPresenceAsync(true);
     }
 
     public async Task SetPresenceAsync(bool isOnline, CancellationToken cancellationToken = default)
     {
         var session = CurrentSession;
-        if (session is null || session.Id <= 0)
+        if (session is not null && session.Id > 0)
         {
+            try
+            {
+                using var response = await _httpClient.PutAsync(
+                    $"{ApiEndpointResolver.UserEndpoint}/presence/{session.Id}?isOnline={isOnline.ToString().ToLowerInvariant()}",
+                    content: null,
+                    cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+
+                session.OnlineStatus = isOnline ? "Online" : "Offline";
+                Preferences.Default.Set(PreferenceOnlineStatus, session.OnlineStatus);
+
+                if (ReferenceEquals(CurrentSession, session))
+                {
+                    SessionChanged?.Invoke(this, session);
+                }
+            }
+            catch
+            {
+                // Presence should never break the main auth flow.
+            }
+
             return;
         }
 
         try
         {
-            using var response = await _httpClient.PutAsync(
-                $"{ApiEndpointResolver.UserEndpoint}/presence/{session.Id}?isOnline={isOnline.ToString().ToLowerInvariant()}",
-                content: null,
-                cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return;
-            }
-
-            session.OnlineStatus = isOnline ? "Online" : "Offline";
-            Preferences.Default.Set(PreferenceOnlineStatus, session.OnlineStatus);
-
-            if (ReferenceEquals(CurrentSession, session))
-            {
-                SessionChanged?.Invoke(this, session);
-            }
+            await UpdateGuestPresenceAsync(isOnline, cancellationToken);
         }
         catch
         {
-            // Presence should never break the main auth flow.
+            // Guest presence should also stay silent.
         }
     }
 
     public void StartPresenceHeartbeat()
     {
         StopPresenceHeartbeat();
-
-        if (CurrentSession is null)
-        {
-            return;
-        }
 
         _presenceCancellation = new CancellationTokenSource();
         _presenceTimer = new PeriodicTimer(TimeSpan.FromSeconds(45));
@@ -254,6 +260,28 @@ public sealed class AuthService
         SessionChanged?.Invoke(this, session);
     }
 
+    public UsageActorIdentity GetUsageIdentity()
+    {
+        var session = CurrentSession;
+        if (session is not null && session.Id > 0)
+        {
+            return new UsageActorIdentity
+            {
+                UserId = session.Id,
+                UserName = session.FullName,
+                Role = session.Role
+            };
+        }
+
+        return new UsageActorIdentity
+        {
+            UserId = 0,
+            UserName = "guid",
+            Role = "TravelerGuest",
+            GuestId = GuestId
+        };
+    }
+
     private static UserSession? LoadSessionFromPreferences()
     {
         if (!Preferences.Default.Get(PreferenceIsLoggedIn, false))
@@ -271,6 +299,27 @@ public sealed class AuthService
             OnlineStatus = Preferences.Default.Get(PreferenceOnlineStatus, "Offline"),
             IsVip = Preferences.Default.Get(PreferenceIsVip, false)
         };
+    }
+
+    private static string GetOrCreateGuestId()
+    {
+        var existingGuestId = Preferences.Default.Get(PreferenceGuestId, string.Empty);
+        if (!string.IsNullOrWhiteSpace(existingGuestId))
+        {
+            return existingGuestId;
+        }
+
+        var newGuestId = Guid.NewGuid().ToString("N");
+        Preferences.Default.Set(PreferenceGuestId, newGuestId);
+        return newGuestId;
+    }
+
+    private async Task UpdateGuestPresenceAsync(bool isOnline, CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.PutAsync(
+            $"{ApiEndpointResolver.UserEndpoint}/guest-presence?guestId={Uri.EscapeDataString(GuestId)}&isOnline={isOnline.ToString().ToLowerInvariant()}",
+            content: null,
+            cancellationToken);
     }
 
     private async Task RunPresenceHeartbeatAsync(PeriodicTimer timer, CancellationToken cancellationToken)

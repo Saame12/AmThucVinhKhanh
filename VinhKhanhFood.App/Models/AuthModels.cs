@@ -24,3 +24,11 @@ public sealed class UserSession
     public string OnlineStatus { get; set; } = "Offline";
     public bool IsVip { get; set; }
 }
+
+public sealed class UsageActorIdentity
+{
+    public int UserId { get; set; }
+    public string UserName { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string? GuestId { get; set; }
+}

@@ -20,12 +20,13 @@ public sealed class UsageTrackingService
     {
         try
         {
-            var session = App.Auth.CurrentSession;
+            var identity = App.Auth.GetUsageIdentity();
             var payload = new
             {
-                UserId = session?.Id ?? 0,
-                UserName = session?.FullName ?? "Guest",
-                Role = session?.Role ?? "Traveler",
+                UserId = identity.UserId,
+                UserName = identity.UserName,
+                Role = identity.Role,
+                GuestId = identity.GuestId,
                 PoiId = poiId
             };
 

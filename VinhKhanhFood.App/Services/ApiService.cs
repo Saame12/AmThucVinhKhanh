@@ -21,6 +21,7 @@ public class ApiService
     {
         try
         {
+            await App.Auth.SetPresenceAsync(true);
             var response = await _httpClient.GetFromJsonAsync<List<FoodLocation>>(ApiEndpointResolver.FoodEndpoint);
             return response ?? new List<FoodLocation>();
         }

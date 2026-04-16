@@ -11,6 +11,10 @@ public class User
     public string Role { get; set; } = "User";
     public string Status { get; set; } = "Active";
     public bool IsVip { get; set; }
+    public bool IsVirtual { get; set; }
+    public string GuestId { get; set; } = string.Empty;
+    public string? RemoteIp { get; set; }
+    public DateTime? LastSeenUtc { get; set; }
 }
 
 public class LoginRequest
@@ -30,10 +34,12 @@ public class RegisterRequest
 public class LoginResponse
 {
     public int Id { get; set; }
+    public string DisplayId { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string OnlineStatus { get; set; } = "Offline";
     public bool IsVip { get; set; }
+    public bool IsVirtual { get; set; }
 }

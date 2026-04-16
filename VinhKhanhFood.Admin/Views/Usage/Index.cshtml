@@ -1,53 +1,131 @@
-@model List<VinhKhanhFood.Admin.Models.UsageHistory>
+@model VinhKhanhFood.Admin.Models.UsageDashboardViewModel
 
-<h2>📊 Usage History</h2>
+@{
+    ViewData["Title"] = "Thong ke truy cap POI";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Thong ke truy cap POI cua khach du lich</h2>
+    <form method="get" class="d-flex gap-2">
+        <select name="period" class="form-select">
+            <option value="week" selected="@(Model.SelectedPeriod == "week")">Tuan</option>
+            <option value="month" selected="@(Model.SelectedPeriod == "month")">Thang</option>
+            <option value="year" selected="@(Model.SelectedPeriod == "year")">Nam</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Xem</button>
+    </form>
+</div>
 
 @if (TempData["Error"] is string errorMessage)
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>User</th>
-            <th>Action</th>
-            <th>POI</th>
-            <th>Role</th>
-            <th>Time</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
+<p class="text-muted">Khoang thoi gian dang xem: <strong>@Model.PeriodLabel</strong></p>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Tong luot truy cap</div>
+                <div class="fs-3 fw-bold">@Model.TotalTravelerViews</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">So POI duoc xem</div>
+                <div class="fs-3 fw-bold">@Model.DistinctPois</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-success">
+            <div class="card-body">
+                <div class="text-muted small">POI nhieu truy cap nhat</div>
+                <div class="fw-bold">@((Model.MostVisitedPoi?.PoiName) ?? "Chua co du lieu")</div>
+                <div class="small text-success">@((Model.MostVisitedPoi?.VisitCount).GetValueOrDefault()) luot</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-warning">
+            <div class="card-body">
+                <div class="text-muted small">POI it truy cap nhat</div>
+                <div class="fw-bold">@((Model.LeastVisitedPoi?.PoiName) ?? "Chua co du lieu")</div>
+                <div class="small text-warning">@((Model.LeastVisitedPoi?.VisitCount).GetValueOrDefault()) luot</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Xep hang POI theo luot truy cap</h5>
+
+        @if (Model.Rankings.Count == 0)
         {
-            <tr>
-                <td>@item.UserName (@item.UserId)</td>
-                <td>
-                    @if (item.Action == "CREATE")
-                    {
-                        <span class="badge bg-success">CREATE</span>
-                    }
-                    else if (item.Action == "EDIT")
-                    {
-                        <span class="badge bg-warning text-dark">EDIT</span>
-                    }
-                    else if (item.Action == "DELETE")
-                    {
-                        <span class="badge bg-danger">DELETE</span>
-                    }
-                    else if (item.Action == "VIEW_DETAIL")
-                    {
-                        <span class="badge bg-primary">VIEW_DETAIL</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">@item.Action</span>
-                    }
-                </td>
-                <td>@item.PoiName (@item.PoiId)</td>
-                <td>@item.Role</td>
-                <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-            </tr>
+            <div class="text-muted">Chua co luot truy cap nao trong khoang thoi gian nay.</div>
         }
-    </tbody>
-</table>
+        else
+        {
+            <table class="table table-bordered table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>POI</th>
+                        <th>Luot truy cap</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < Model.Rankings.Count; i++)
+                    {
+                        var item = Model.Rankings[i];
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td>@item.PoiName (@item.PoiId)</td>
+                            <td>@item.VisitCount</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">Lich su gan nhat cua khach du lich</h5>
+        <table class="table table-bordered table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>User</th>
+                    <th>POI</th>
+                    <th>Role</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.HistoryItems.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">Chua co du lieu.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.HistoryItems)
+                    {
+                        <tr>
+                            <td>@item.UserName (@item.UserId)</td>
+                            <td>@item.PoiName (@item.PoiId)</td>
+                            <td>@item.Role</td>
+                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -26,7 +26,12 @@ public class UserController : ControllerBase
             .OrderByDescending(user => user.Id)
             .ToListAsync();
 
-        return Ok(users.Select(ToResponse));
+        var combinedUsers = users.Select(ToResponse)
+            .OrderByDescending(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(user => user.Id)
+            .ToList();
+
+        return Ok(combinedUsers);
     }
 
     [HttpGet("{id:int}")]
@@ -121,6 +126,26 @@ public class UserController : ControllerBase
         }
 
         return Ok(new { id, onlineStatus = isOnline ? "Online" : "Offline" });
+    }
+
+    [HttpPut("guest-presence")]
+    public async Task<IActionResult> UpdateGuestPresence([FromQuery] string guestId, [FromQuery] bool isOnline)
+    {
+        if (string.IsNullOrWhiteSpace(guestId))
+        {
+            return BadRequest(new { message = "GuestId is required." });
+        }
+
+        return await UpdateGuestPresenceInternalAsync(guestId.Trim(), isOnline);
+    }
+
+    [HttpGet("traveler-presence")]
+    public async Task<IActionResult> GetTravelerPresenceSummary()
+    {
+        var users = await _context.Users.ToListAsync();
+        var activeTravelerCount = _presenceService.GetActiveTravelerCount(users);
+
+        return Ok(new { activeTravelerCount });
     }
 
     [HttpPost("vip/purchase/{id:int}")]
@@ -224,11 +249,57 @@ public class UserController : ControllerBase
         new()
         {
             Id = user.Id,
+            DisplayId = user.Id.ToString(),
             Username = user.Username,
             FullName = user.FullName,
             Role = user.Role,
             Status = user.Status,
-            OnlineStatus = _presenceService.GetStatus(user.Id),
-            IsVip = user.IsVip
+            OnlineStatus = _presenceService.GetStatus(user),
+            IsVip = user.IsVip,
+            IsVirtual = user.IsVirtual
         };
+
+    private async Task<IActionResult> UpdateGuestPresenceInternalAsync(string guestId, bool isOnline)
+    {
+        var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var guestUser = await _context.Users.FirstOrDefaultAsync(user =>
+            user.IsVirtual &&
+            user.GuestId == guestId);
+
+        if (guestUser is null)
+        {
+            guestUser = new User
+            {
+                Username = _presenceService.BuildGuestDisplayName(remoteIp, guestId),
+                Password = string.Empty,
+                FullName = _presenceService.BuildGuestDisplayName(remoteIp, guestId),
+                Role = "TravelerGuest",
+                Status = "Active",
+                IsVip = false,
+                IsVirtual = true,
+                GuestId = guestId,
+                RemoteIp = remoteIp,
+                LastSeenUtc = isOnline ? DateTime.UtcNow : null
+            };
+
+            _context.Users.Add(guestUser);
+        }
+        else
+        {
+            var displayName = _presenceService.BuildGuestDisplayName(remoteIp, guestId);
+            guestUser.Username = displayName;
+            guestUser.FullName = displayName;
+            guestUser.RemoteIp = remoteIp;
+            guestUser.LastSeenUtc = isOnline ? DateTime.UtcNow : null;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            guestId,
+            onlineStatus = isOnline ? "Online" : "Offline",
+            userId = guestUser.Id
+        });
+    }
 }

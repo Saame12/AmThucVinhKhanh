@@ -1,57 +1,69 @@
 @model List<VinhKhanhFood.Admin.Models.User>
 
 @{
-    ViewData["Title"] = "Quản lý User";
+    ViewData["Title"] = "Quan ly User";
+    var activeTravelerCount = ViewBag.ActiveTravelerCount is int count ? count : 0;
 }
 
-<h2 class="mb-3">👤 Quản lý người dùng</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Quan sat nguoi dung app</h2>
+    <span class="badge rounded-pill bg-success fs-6">Dang dung app: @activeTravelerCount</span>
+</div>
 
 @if (TempData["Error"] is string errorMessage)
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<table class="table table-bordered table-hover">
+<table class="table table-bordered table-hover align-middle">
     <thead class="table-dark">
         <tr>
             <th>ID</th>
             <th>Username</th>
-            <th>Họ tên</th>
+            <th>Ho ten</th>
             <th>Role</th>
-            <th>Tài khoản</th>
-            <th>Hiện diện</th>
-            <th>Hành động</th>
+            <th>Loai tai khoan</th>
+            <th>Hien dien</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var u in Model)
         {
+            var displayId = string.IsNullOrWhiteSpace(u.DisplayId) ? u.Id.ToString() : u.DisplayId;
+            var isAdmin = string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+            var isOwner = string.Equals(u.Role, "Owner", StringComparison.OrdinalIgnoreCase);
+            var isVirtual = u.IsVirtual;
+
             <tr>
-                <td>@u.Id</td>
+                <td>@displayId</td>
                 <td>@u.Username</td>
                 <td>@u.FullName</td>
                 <td>
-                    @if (u.Role == "Admin")
+                    @if (isAdmin)
                     {
                         <span class="badge bg-danger">Admin</span>
                     }
-                    else if (u.Role == "Owner")
+                    else if (isOwner)
                     {
                         <span class="badge bg-primary">Owner</span>
                     }
+                    else if (isVirtual)
+                    {
+                        <span class="badge bg-warning text-dark">Guest</span>
+                    }
                     else
                     {
-                        <span class="badge bg-secondary">User</span>
+                        <span class="badge bg-secondary">Traveler</span>
                     }
                 </td>
                 <td>
-                    @if (u.Status == "Active")
+                    @if (isVirtual)
                     {
-                        <span class="badge bg-success">Active</span>
+                        <span class="badge bg-light text-dark border">guid</span>
                     }
                     else
                     {
-                        <span class="badge bg-danger">Blocked</span>
+                        <span class="badge bg-light text-dark border">registered</span>
                     }
                 </td>
                 <td>
@@ -62,24 +74,6 @@
                     else
                     {
                         <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Offline</span>
-                    }
-                </td>
-                <td>
-                    @if (u.Role != "Admin" && u.Status == "Active")
-                    {
-                        <a asp-action="Block" asp-route-id="@u.Id" class="btn btn-danger btn-sm">🔒 Block</a>
-                    }
-                    else if (u.Role != "Admin")
-                    {
-                        <a asp-action="Unblock" asp-route-id="@u.Id" class="btn btn-success btn-sm">🔓 Unblock</a>
-                    }
-
-                    @if (u.Role != "Admin")
-                    {
-                        <a asp-action="Delete"
-                           asp-route-id="@u.Id"
-                           class="btn btn-outline-danger btn-sm ms-1"
-                           onclick="return confirm('Xóa tài khoản này?');">🗑 Delete</a>
                     }
                 </td>
             </tr>
