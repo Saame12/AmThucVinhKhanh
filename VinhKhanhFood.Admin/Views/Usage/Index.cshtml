@@ -4,8 +4,24 @@
     ViewData["Title"] = "Thong ke truy cap POI";
 }
 
+<style>
+    .heatmap-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+    }
+
+    .heatmap-tile {
+        border-radius: 18px;
+        padding: 16px;
+        color: #111827;
+        border: 1px solid rgba(0,0,0,.08);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .08);
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Thong ke truy cap POI cua khach du lich</h2>
+    <h2 class="mb-0">Thong ke truy cap va nghe audio cua khach du lich</h2>
     <form method="get" class="d-flex gap-2">
         <select name="period" class="form-select">
             <option value="week" selected="@(Model.SelectedPeriod == "week")">Tuan</option>
@@ -24,26 +40,61 @@
 <p class="text-muted">Khoang thoi gian dang xem: <strong>@Model.PeriodLabel</strong></p>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <div class="text-muted small">Tong luot truy cap</div>
+                <div class="text-muted small">Online hien tai</div>
+                <div class="fs-3 fw-bold">@Model.ActiveDevicesNow</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Thiet bi 24h</div>
+                <div class="fs-3 fw-bold">@Model.ActiveDevicesLast24Hours</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Thiet bi thang nay</div>
+                <div class="fs-3 fw-bold">@Model.ActiveDevicesThisMonth</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Luot xem POI</div>
                 <div class="fs-3 fw-bold">@Model.TotalTravelerViews</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <div class="text-muted small">So POI duoc xem</div>
+                <div class="text-muted small">Luot nghe audio</div>
+                <div class="fs-3 fw-bold">@Model.TotalAudioPlays</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">So POI co data</div>
                 <div class="fs-3 fw-bold">@Model.DistinctPois</div>
             </div>
         </div>
     </div>
+</div>
+
+<div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card shadow-sm h-100 border-success">
             <div class="card-body">
-                <div class="text-muted small">POI nhieu truy cap nhat</div>
+                <div class="text-muted small">POI xem nhieu nhat</div>
                 <div class="fw-bold">@((Model.MostVisitedPoi?.PoiName) ?? "Chua co du lieu")</div>
                 <div class="small text-success">@((Model.MostVisitedPoi?.VisitCount).GetValueOrDefault()) luot</div>
             </div>
@@ -52,9 +103,27 @@
     <div class="col-md-3">
         <div class="card shadow-sm h-100 border-warning">
             <div class="card-body">
-                <div class="text-muted small">POI it truy cap nhat</div>
+                <div class="text-muted small">POI xem it nhat</div>
                 <div class="fw-bold">@((Model.LeastVisitedPoi?.PoiName) ?? "Chua co du lieu")</div>
                 <div class="small text-warning">@((Model.LeastVisitedPoi?.VisitCount).GetValueOrDefault()) luot</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-success">
+            <div class="card-body">
+                <div class="text-muted small">POI nghe nhieu nhat</div>
+                <div class="fw-bold">@((Model.MostPlayedPoi?.PoiName) ?? "Chua co du lieu")</div>
+                <div class="small text-success">@((Model.MostPlayedPoi?.VisitCount).GetValueOrDefault()) luot</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-warning">
+            <div class="card-body">
+                <div class="text-muted small">POI nghe it nhat</div>
+                <div class="fw-bold">@((Model.LeastPlayedPoi?.PoiName) ?? "Chua co du lieu")</div>
+                <div class="small text-warning">@((Model.LeastPlayedPoi?.VisitCount).GetValueOrDefault()) luot</div>
             </div>
         </div>
     </div>
@@ -62,45 +131,108 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <h5 class="card-title">Xep hang POI theo luot truy cap</h5>
-
-        @if (Model.Rankings.Count == 0)
+        <h5 class="card-title">Heatmap du lieu POI theo luot nghe audio</h5>
+        @if (Model.HeatmapPoints.Count == 0)
         {
-            <div class="text-muted">Chua co luot truy cap nao trong khoang thoi gian nay.</div>
+            <div class="text-muted">Chua co du lieu nghe audio de tao heatmap.</div>
         }
         else
         {
-            <table class="table table-bordered table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>POI</th>
-                        <th>Luot truy cap</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (var i = 0; i < Model.Rankings.Count; i++)
-                    {
-                        var item = Model.Rankings[i];
-                        <tr>
-                            <td>@(i + 1)</td>
-                            <td>@item.PoiName (@item.PoiId)</td>
-                            <td>@item.VisitCount</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <div class="heatmap-grid">
+                @foreach (var point in Model.HeatmapPoints)
+                {
+                    var opacity = Math.Max(0.15, point.IntensityRatio);
+                    <div class="heatmap-tile" style="background-color: rgba(249, 115, 22, @opacity.ToString(System.Globalization.CultureInfo.InvariantCulture));">
+                        <div class="fw-bold">@point.PoiName</div>
+                        <div class="small">POI ID: @point.PoiId</div>
+                        <div class="small">Nghe: @point.Intensity</div>
+                        <div class="small text-muted">Lat: @point.Latitude, Lng: @point.Longitude</div>
+                    </div>
+                }
+            </div>
         }
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Xep hang POI theo luot xem</h5>
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>POI</th>
+                            <th>Luot xem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.ViewRankings.Count == 0)
+                        {
+                            <tr><td colspan="3" class="text-center text-muted">Chua co du lieu.</td></tr>
+                        }
+                        else
+                        {
+                            @for (var i = 0; i < Model.ViewRankings.Count; i++)
+                            {
+                                var item = Model.ViewRankings[i];
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>@item.PoiName (@item.PoiId)</td>
+                                    <td>@item.VisitCount</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Xep hang POI theo luot nghe audio</h5>
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>POI</th>
+                            <th>Luot nghe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.AudioRankings.Count == 0)
+                        {
+                            <tr><td colspan="3" class="text-center text-muted">Chua co du lieu.</td></tr>
+                        }
+                        else
+                        {
+                            @for (var i = 0; i < Model.AudioRankings.Count; i++)
+                            {
+                                var item = Model.AudioRankings[i];
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>@item.PoiName (@item.PoiId)</td>
+                                    <td>@item.VisitCount</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <h5 class="card-title">Lich su gan nhat cua khach du lich</h5>
+        <h5 class="card-title">Lich su hoat dong gan nhat</h5>
         <table class="table table-bordered table-hover mb-0">
             <thead class="table-light">
                 <tr>
                     <th>User</th>
+                    <th>Action</th>
                     <th>POI</th>
                     <th>Role</th>
                     <th>Time</th>
@@ -110,7 +242,7 @@
                 @if (Model.HistoryItems.Count == 0)
                 {
                     <tr>
-                        <td colspan="4" class="text-center text-muted">Chua co du lieu.</td>
+                        <td colspan="5" class="text-center text-muted">Chua co du lieu.</td>
                     </tr>
                 }
                 else
@@ -119,6 +251,7 @@
                     {
                         <tr>
                             <td>@item.UserName (@item.UserId)</td>
+                            <td>@item.Action</td>
                             <td>@item.PoiName (@item.PoiId)</td>
                             <td>@item.Role</td>
                             <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>

@@ -1,0 +1,268 @@
+@model VinhKhanhFood.Admin.Models.PaymentDashboardViewModel
+
+@{
+    ViewData["Title"] = "QR Payment Dashboard";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-1">QR Payment Dashboard</h2>
+        <div class="text-muted">Thong ke giao dich QR mo phong cho do an, chua noi cong thanh toan that.</div>
+    </div>
+</div>
+
+@if (TempData["Error"] is string errorMessage)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (TempData["Success"] is string successMessage)
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Tu ngay</label>
+                <input class="form-control" type="date" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Den ngay</label>
+                <input class="form-control" type="date" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">POI</label>
+                <select class="form-select" name="poiId">
+                    <option value="">Tat ca</option>
+                    @foreach (var poi in Model.Pois.OrderBy(item => item.Name))
+                    {
+                        if (Model.SelectedPoiId == poi.Id)
+                        {
+                            <option value="@poi.Id" selected>@poi.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@poi.Id">@poi.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Trang thai</label>
+                <select class="form-select" name="status">
+                    <option value="">Tat ca</option>
+                    @if (Model.SelectedStatus == "Paid")
+                    {
+                        <option value="Paid" selected>Paid</option>
+                    }
+                    else
+                    {
+                        <option value="Paid">Paid</option>
+                    }
+                    @if (Model.SelectedStatus == "Pending")
+                    {
+                        <option value="Pending" selected>Pending</option>
+                    }
+                    else
+                    {
+                        <option value="Pending">Pending</option>
+                    }
+                    @if (Model.SelectedStatus == "Failed")
+                    {
+                        <option value="Failed" selected>Failed</option>
+                    }
+                    else
+                    {
+                        <option value="Failed">Failed</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-1 d-grid">
+                <button type="submit" class="btn btn-primary">Loc</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Tong giao dich</div>
+                <div class="fs-3 fw-bold">@Model.TotalTransactions</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Da thanh toan</div>
+                <div class="fs-3 fw-bold text-success">@Model.PaidTransactions</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Doanh thu</div>
+                <div class="fs-3 fw-bold">@Model.TotalRevenue.ToString("N0")</div>
+                <div class="small text-muted">VND</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Gia tri trung binh</div>
+                <div class="fs-3 fw-bold">@Model.AverageOrderValue.ToString("N0")</div>
+                <div class="small text-muted">VND</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Top diem den co doanh thu cao</h5>
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>POI</th>
+                            <th>Doanh thu</th>
+                            <th>Giao dich</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.TopPois.Count == 0)
+                        {
+                            <tr><td colspan="3" class="text-center text-muted">Chua co du lieu.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.TopPois)
+                            {
+                                <tr>
+                                    <td>@item.PoiName (@item.PoiId)</td>
+                                    <td>@item.Revenue.ToString("N0")</td>
+                                    <td>@item.TransactionCount</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Phan bo theo nha cung cap QR</h5>
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Provider</th>
+                            <th>Giao dich</th>
+                            <th>Da thanh toan</th>
+                            <th>Doanh thu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.ProviderBreakdown.Count == 0)
+                        {
+                            <tr><td colspan="4" class="text-center text-muted">Chua co du lieu.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.ProviderBreakdown)
+                            {
+                                <tr>
+                                    <td>@item.Provider</td>
+                                    <td>@item.TransactionCount</td>
+                                    <td>@item.PaidCount</td>
+                                    <td>@item.Revenue.ToString("N0")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">Danh sach giao dich QR</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Transaction</th>
+                        <th>POI</th>
+                        <th>Provider</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Paid</th>
+                        <th>Reconcile</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Transactions.Count == 0)
+                    {
+                        <tr><td colspan="8" class="text-center text-muted">Chua co giao dich QR.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Transactions.Take(120))
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@item.TransactionCode</div>
+                                    <div class="small text-muted">@item.CustomerLabel</div>
+                                </td>
+                                <td>@item.PoiName</td>
+                                <td>@item.Provider</td>
+                                <td>@item.Amount.ToString("N0") @item.Currency</td>
+                                <td>
+                                    @if (item.Status == "Paid")
+                                    {
+                                        <span class="badge bg-success">Paid</span>
+                                    }
+                                    else if (item.Status == "Pending")
+                                    {
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Failed</span>
+                                    }
+                                </td>
+                                <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(item.PaidAt?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                                <td>
+                                    <form asp-action="Reconcile" method="post" class="d-inline">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <input type="hidden" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="poiId" value="@Model.SelectedPoiId" />
+                                        <input type="hidden" name="status" value="@Model.SelectedStatus" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Doi soat</button>
+                                    </form>
+                                    @if (item.ReconciledAt.HasValue)
+                                    {
+                                        <div class="small text-success mt-1">@item.ReconciledAt.Value.ToString("dd/MM HH:mm")</div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

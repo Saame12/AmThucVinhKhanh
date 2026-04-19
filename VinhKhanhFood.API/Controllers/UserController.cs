@@ -256,7 +256,8 @@ public class UserController : ControllerBase
             Status = user.Status,
             OnlineStatus = _presenceService.GetStatus(user),
             IsVip = user.IsVip,
-            IsVirtual = user.IsVirtual
+            IsVirtual = user.IsVirtual,
+            LastSeenUtc = user.IsVirtual ? user.LastSeenUtc : null
         };
 
     private async Task<IActionResult> UpdateGuestPresenceInternalAsync(string guestId, bool isOnline)

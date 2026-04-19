@@ -11,5 +11,6 @@
         public string? Status { get; set; }
         public string OnlineStatus { get; set; } = "Offline";
         public bool IsVirtual { get; set; }
+        public DateTime? LastSeenUtc { get; set; }
     }
 }

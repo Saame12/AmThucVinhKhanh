@@ -41,6 +41,7 @@ public class FoodLocation
     public string QrAudioUri => $"vinhkhanhfood://poi/{Id}";
 
     public string QrCodeLabel => $"VK-POI-{Id:D4}";
+    public string QrManualCode => QrCodeLabel;
 
     public string QrCodeImageUrl => $"https://quickchart.io/qr?size=220&text={Uri.EscapeDataString(QrAudioUri)}";
 

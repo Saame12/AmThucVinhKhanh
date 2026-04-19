@@ -17,8 +17,11 @@ public class UsageController : Controller
     {
         try
         {
-            var data = await _http.GetFromJsonAsync<List<UsageHistory>>("Food/history") ?? new List<UsageHistory>();
-            var model = BuildDashboard(data, period);
+            var history = await _http.GetFromJsonAsync<List<UsageHistory>>("Food/history") ?? new List<UsageHistory>();
+            var devices = await _http.GetFromJsonAsync<List<User>>("User") ?? new List<User>();
+            var pois = await _http.GetFromJsonAsync<List<FoodLocation>>("Food") ?? new List<FoodLocation>();
+
+            var model = BuildDashboard(history, devices, pois, period);
             return View(model);
         }
         catch
@@ -32,20 +35,85 @@ public class UsageController : Controller
         }
     }
 
-    private static UsageDashboardViewModel BuildDashboard(List<UsageHistory> allHistory, string period)
+    public async Task<IActionResult> Devices()
+    {
+        try
+        {
+            var users = await _http.GetFromJsonAsync<List<User>>("User") ?? new List<User>();
+            var deviceUsers = users
+                .Where(IsTravelerDevice)
+                .OrderByDescending(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
+                .ThenByDescending(user => user.LastSeenUtc)
+                .ToList();
+
+            var nowUtc = DateTime.UtcNow;
+            var model = new DeviceHistoryViewModel
+            {
+                ActiveDevicesNow = deviceUsers.Count(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase)),
+                ActiveDevicesLast24Hours = deviceUsers.Count(user => user.LastSeenUtc.HasValue && nowUtc - user.LastSeenUtc.Value <= TimeSpan.FromHours(24)),
+                ActiveDevicesThisMonth = deviceUsers.Count(user => user.LastSeenUtc.HasValue && user.LastSeenUtc.Value.Year == nowUtc.Year && user.LastSeenUtc.Value.Month == nowUtc.Month),
+                Devices = deviceUsers
+            };
+
+            return View(model);
+        }
+        catch
+        {
+            TempData["Error"] = "Khong the tai lich su thiet bi vi API chua chay.";
+            return View(new DeviceHistoryViewModel());
+        }
+    }
+
+    private static UsageDashboardViewModel BuildDashboard(List<UsageHistory> allHistory, List<User> devices, List<FoodLocation> pois, string period)
     {
         var normalizedPeriod = NormalizePeriod(period);
         var periodRange = ResolvePeriodRange(normalizedPeriod);
+        var nowUtc = DateTime.UtcNow;
+        var deviceUsers = devices.Where(IsTravelerDevice).ToList();
 
         var travelerHistory = allHistory
-            .Where(item => string.Equals(item.Action, "VIEW_DETAIL", StringComparison.OrdinalIgnoreCase))
             .Where(item => !string.Equals(item.Role, "Admin", StringComparison.OrdinalIgnoreCase))
             .Where(item => !string.Equals(item.Role, "Owner", StringComparison.OrdinalIgnoreCase))
             .Where(item => item.CreatedAt >= periodRange.Start && item.CreatedAt < periodRange.End)
             .OrderByDescending(item => item.CreatedAt)
             .ToList();
 
-        var rankings = travelerHistory
+        var viewHistory = travelerHistory
+            .Where(item => string.Equals(item.Action, "VIEW_DETAIL", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var audioHistory = travelerHistory
+            .Where(item => string.Equals(item.Action, "AUDIO_PLAY", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var viewRankings = BuildPoiRanking(viewHistory);
+        var audioRankings = BuildPoiRanking(audioHistory);
+        var heatmapPoints = BuildHeatmapPoints(audioRankings, pois);
+
+        return new UsageDashboardViewModel
+        {
+            SelectedPeriod = normalizedPeriod,
+            PeriodLabel = GetPeriodLabel(normalizedPeriod),
+            TotalTravelerViews = viewHistory.Count,
+            TotalAudioPlays = audioHistory.Count,
+            DistinctPois = viewRankings.Select(item => item.PoiId).Union(audioRankings.Select(item => item.PoiId)).Count(),
+            ActiveDevicesNow = deviceUsers.Count(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase)),
+            ActiveDevicesLast24Hours = deviceUsers.Count(user => user.LastSeenUtc.HasValue && nowUtc - user.LastSeenUtc.Value <= TimeSpan.FromHours(24)),
+            ActiveDevicesThisMonth = deviceUsers.Count(user => user.LastSeenUtc.HasValue && user.LastSeenUtc.Value.Year == nowUtc.Year && user.LastSeenUtc.Value.Month == nowUtc.Month),
+            MostVisitedPoi = viewRankings.FirstOrDefault(),
+            LeastVisitedPoi = viewRankings.OrderBy(item => item.VisitCount).ThenBy(item => item.PoiName, StringComparer.OrdinalIgnoreCase).FirstOrDefault(),
+            MostPlayedPoi = audioRankings.FirstOrDefault(),
+            LeastPlayedPoi = audioRankings.OrderBy(item => item.VisitCount).ThenBy(item => item.PoiName, StringComparer.OrdinalIgnoreCase).FirstOrDefault(),
+            ViewRankings = viewRankings,
+            AudioRankings = audioRankings,
+            HeatmapPoints = heatmapPoints,
+            HistoryItems = travelerHistory.Take(100).ToList()
+        };
+    }
+
+    private static List<PoiUsageStat> BuildPoiRanking(List<UsageHistory> history)
+    {
+        return history
             .GroupBy(item => new { item.PoiId, PoiName = item.PoiName ?? $"POI {item.PoiId}" })
             .Select(group => new PoiUsageStat
             {
@@ -56,24 +124,34 @@ public class UsageController : Controller
             .OrderByDescending(item => item.VisitCount)
             .ThenBy(item => item.PoiName, StringComparer.OrdinalIgnoreCase)
             .ToList();
-
-        var leastVisited = rankings
-            .OrderBy(item => item.VisitCount)
-            .ThenBy(item => item.PoiName, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault();
-
-        return new UsageDashboardViewModel
-        {
-            SelectedPeriod = normalizedPeriod,
-            PeriodLabel = GetPeriodLabel(normalizedPeriod),
-            TotalTravelerViews = travelerHistory.Count,
-            DistinctPois = rankings.Count,
-            MostVisitedPoi = rankings.FirstOrDefault(),
-            LeastVisitedPoi = leastVisited,
-            Rankings = rankings,
-            HistoryItems = travelerHistory.Take(100).ToList()
-        };
     }
+
+    private static List<PoiHeatmapPoint> BuildHeatmapPoints(List<PoiUsageStat> audioRankings, List<FoodLocation> pois)
+    {
+        var maxIntensity = audioRankings.Count == 0 ? 0 : audioRankings.Max(item => item.VisitCount);
+
+        return audioRankings
+            .Join(
+                pois,
+                ranking => ranking.PoiId,
+                poi => poi.Id,
+                (ranking, poi) => new PoiHeatmapPoint
+                {
+                    PoiId = poi.Id,
+                    PoiName = poi.Name,
+                    Latitude = poi.Latitude,
+                    Longitude = poi.Longitude,
+                    Intensity = ranking.VisitCount,
+                    IntensityRatio = maxIntensity == 0 ? 0 : Math.Round((double)ranking.VisitCount / maxIntensity, 2)
+                })
+            .OrderByDescending(item => item.Intensity)
+            .ThenBy(item => item.PoiName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static bool IsTravelerDevice(User user) =>
+        !string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(user.Role, "Owner", StringComparison.OrdinalIgnoreCase);
 
     private static string NormalizePeriod(string? period) => period?.Trim().ToLowerInvariant() switch
     {

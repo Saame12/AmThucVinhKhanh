@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Json;
+using VinhKhanhFood.Admin.Models;
 using VinhKhanhFood.API.Models;
 
 namespace VinhKhanhFood.Admin.Controllers
@@ -175,6 +176,42 @@ namespace VinhKhanhFood.Admin.Controllers
                 }
 
                 return View(poi);
+            }
+            catch
+            {
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        public async Task<IActionResult> PaymentQr(int id, decimal? amount)
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                var poi = await _http.GetFromJsonAsync<FoodLocation>($"Food/{id}");
+                if (poi is null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var model = new PoiPaymentQrViewModel
+                {
+                    Poi = poi,
+                    SelectedAmount = amount.GetValueOrDefault(50000m),
+                    SuggestedAmounts = new List<decimal> { 30000m, 50000m, 100000m, 150000m, 200000m }
+                };
+
+                if (!model.SuggestedAmounts.Contains(model.SelectedAmount))
+                {
+                    model.SuggestedAmounts.Add(model.SelectedAmount);
+                    model.SuggestedAmounts = model.SuggestedAmounts.OrderBy(value => value).ToList();
+                }
+
+                return View(model);
             }
             catch
             {

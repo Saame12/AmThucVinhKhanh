@@ -42,4 +42,5 @@ public class LoginResponse
     public string OnlineStatus { get; set; } = "Offline";
     public bool IsVip { get; set; }
     public bool IsVirtual { get; set; }
+    public DateTime? LastSeenUtc { get; set; }
 }

@@ -184,7 +184,7 @@ namespace VinhKhanhFood.API.Controllers
                 userId: request.UserId,
                 userName: effectiveUserName,
                 role: effectiveRole,
-                action: "VIEW_DETAIL",
+                action: string.IsNullOrWhiteSpace(request.Action) ? "VIEW_DETAIL" : request.Action.Trim().ToUpperInvariant(),
                 poiId: poi.Id,
                 poiName: poi.Name);
 
@@ -226,6 +226,7 @@ namespace VinhKhanhFood.API.Controllers
         public string UserName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public string? GuestId { get; set; }
+        public string? Action { get; set; }
         public int PoiId { get; set; }
     }
 }

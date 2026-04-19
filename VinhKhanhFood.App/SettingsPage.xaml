@@ -65,29 +65,78 @@
                     StrokeShape="RoundRectangle 24"
                     Padding="18">
                 <VerticalStackLayout Spacing="10">
-                    <Label x:Name="TravelerSectionTitleLabel"
+                    <Label x:Name="AccountSectionTitleLabel"
                            FontSize="20"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextPrimary}" />
-                    <Label x:Name="TravelerSectionSubtitleLabel"
+                    <Label x:Name="AccountSectionSubtitleLabel"
                            FontSize="13"
                            TextColor="{StaticResource TextSecondary}" />
+
                     <Border BackgroundColor="#F8FAFC"
                             StrokeThickness="0"
                             StrokeShape="RoundRectangle 18"
                             Padding="14">
-                        <VerticalStackLayout Spacing="6">
-                            <Label x:Name="GuidCaptionLabel"
-                                   FontSize="12"
-                                   FontAttributes="Bold"
-                                   TextColor="#E85D2A" />
-                            <Label x:Name="GuidValueLabel"
+                        <VerticalStackLayout Spacing="10">
+                            <Label x:Name="AccountStatusLabel"
                                    FontSize="16"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextPrimary}" />
-                            <Label x:Name="GuidHintLabel"
-                                   FontSize="12"
+                            <Label x:Name="AccountNameLabel"
+                                   FontSize="13"
                                    TextColor="{StaticResource TextSecondary}" />
+                            <HorizontalStackLayout Spacing="10">
+                                <Button x:Name="LoginButton"
+                                        HeightRequest="44"
+                                        CornerRadius="14"
+                                        BackgroundColor="#E85D2A"
+                                        TextColor="White"
+                                        FontAttributes="Bold"
+                                        Clicked="OnLoginClicked" />
+                                <Button x:Name="LogoutButton"
+                                        HeightRequest="44"
+                                        CornerRadius="14"
+                                        BackgroundColor="{StaticResource BackgroundSecondary}"
+                                        TextColor="{StaticResource TextPrimary}"
+                                        FontAttributes="Bold"
+                                        Clicked="OnLogoutClicked" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border BackgroundColor="{StaticResource SurfaceLight}"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 24"
+                    Padding="18">
+                <VerticalStackLayout Spacing="10">
+                    <Label x:Name="VipSectionTitleLabel"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}" />
+                    <Label x:Name="VipSectionSubtitleLabel"
+                           FontSize="13"
+                           TextColor="{StaticResource TextSecondary}" />
+                    <Border BackgroundColor="#FFF7ED"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 18"
+                            Padding="14">
+                        <VerticalStackLayout Spacing="10">
+                            <Label x:Name="VipStatusLabel"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label x:Name="VipHintLabel"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Button x:Name="BuyVipButton"
+                                    HeightRequest="44"
+                                    CornerRadius="14"
+                                    BackgroundColor="#F59E0B"
+                                    TextColor="White"
+                                    FontAttributes="Bold"
+                                    Clicked="OnBuyVipClicked" />
                         </VerticalStackLayout>
                     </Border>
                 </VerticalStackLayout>

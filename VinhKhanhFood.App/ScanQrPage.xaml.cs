@@ -90,7 +90,7 @@ public partial class ScanQrPage : ContentPage
             GetManualQrPromptMessage(),
             accept: GetConfirmText(),
             cancel: LocalizationService.GetString("Cancel"),
-            placeholder: "vinhkhanhfood://poi/1",
+            placeholder: "VK-POI-0001 / vinhkhanhfood://poi/1",
             maxLength: 200,
             keyboard: Keyboard.Url);
 
@@ -150,9 +150,9 @@ public partial class ScanQrPage : ContentPage
 
     private static string GetManualQrPromptMessage() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "Paste the POI QR link to simulate a scan on the emulator.",
-        "zh" => "\u7C98\u8D34 POI QR \u94FE\u63A5\uff0C\u5728\u6A21\u62DF\u5668\u4E0A\u6A21\u62DF\u626B\u7801\u3002",
-        _ => "Dan lien ket QR cua POI de mo phong quet tren gia lap."
+        "en" => "Paste the POI QR link or enter the POI code to simulate a scan on the emulator.",
+        "zh" => "\u7C98\u8D34 POI QR \u94FE\u63A5\u6216\u8F93\u5165 POI \u4EE3\u7801\uff0C\u5728\u6A21\u62DF\u5668\u4E0A\u6A21\u62DF\u626B\u7801\u3002",
+        _ => "Dan lien ket QR hoac nhap ma POI de mo phong quet tren gia lap."
     };
 
     private static string GetConfirmText() => LocalizationService.CurrentLanguage switch

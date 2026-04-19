@@ -1,28 +1,28 @@
 @model VinhKhanhFood.API.Models.FoodLocation
 
 @{
-    ViewData["Title"] = "POI QR";
+    ViewData["Title"] = "Audio QR";
 }
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h2 class="mb-1">🔳 QR nghe audio</h2>
-            <div class="text-muted">@Model.Name - @Model.QrCodeLabel</div>
+            <h2 class="mb-1">Audio QR cua POI</h2>
+            <div class="text-muted">@Model.Name</div>
         </div>
         <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
     </div>
 
     <div class="row g-4">
         <div class="col-lg-5">
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body text-center">
                     <img src="@Model.QrCodeImageUrl"
                          alt="@Model.QrCodeLabel"
                          class="img-fluid rounded"
                          style="max-width: 320px;" />
-                    <div class="mt-3 fw-bold">@Model.QrCodeLabel</div>
-                    <div class="text-muted small">@Model.QrAudioUri</div>
+                    <div class="mt-3 fw-bold fs-5">@Model.QrCodeLabel</div>
+                    <div class="small text-muted mt-1">QR nay mo dung POI va phat audio mac dinh.</div>
                 </div>
             </div>
         </div>
@@ -30,16 +30,24 @@
         <div class="col-lg-7">
             <div class="card shadow-sm border-0 mb-3">
                 <div class="card-body">
-                    <h5>Audio mặc định</h5>
-                    <p class="text-muted mb-2">Khi user quét QR trong app hoặc bằng điện thoại có hỗ trợ deep link, app sẽ mở đúng POI này và phát audio mặc định từ mô tả.</p>
+                    <h5 class="mb-3">Thong tin QR Audio</h5>
+                    <div class="mb-2">
+                        <div class="text-muted small">Deep link</div>
+                        <code>@Model.QrAudioUri</code>
+                    </div>
+                    <div class="mb-2">
+                        <div class="text-muted small">Ma nhap thu cong trong app</div>
+                        <code>@Model.QrManualCode</code>
+                    </div>
                     <div>
+                        <div class="text-muted small">Trang thai audio mac dinh</div>
                         @if (Model.HasDefaultAudio)
                         {
-                            <span class="badge bg-success">Ready</span>
+                            <span class="badge bg-success">San sang phat</span>
                         }
                         else
                         {
-                            <span class="badge bg-danger">Missing description</span>
+                            <span class="badge bg-danger">Thieu mo ta de tao audio mac dinh</span>
                         }
                     </div>
                 </div>
@@ -47,18 +55,14 @@
 
             <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <h5>Audio chuyên nghiệp</h5>
-                    <p class="text-muted mb-2">Nếu owner đã upload file audio, app có thể hiển thị thêm mục audio chuyên nghiệp riêng.</p>
-                    <div>
-                        @if (Model.HasProfessionalAudio)
-                        {
-                            <span class="badge bg-warning text-dark">Professional audio uploaded</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">No professional audio yet</span>
-                        }
-                    </div>
+                    <h5 class="mb-3">Cach su dung</h5>
+                    <ol class="mb-0">
+                        <li>Dan QR nay tai quan hoac diem POI.</li>
+                        <li>Du khach mo app va vao tab Scan QR.</li>
+                        <li>Quet QR de mo man hinh chi tiet POI.</li>
+                        <li>App se tu dong phat audio mac dinh tu mo ta cua POI.</li>
+                        <li>Nếu khong dung duoc camera, co the nhap ma <strong>@Model.QrManualCode</strong> trong muc nhap QR thu cong.</li>
+                    </ol>
                 </div>
             </div>
         </div>

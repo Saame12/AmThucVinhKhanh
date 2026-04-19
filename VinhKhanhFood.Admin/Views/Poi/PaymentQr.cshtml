@@ -1,0 +1,93 @@
+@model VinhKhanhFood.Admin.Models.PoiPaymentQrViewModel
+
+@{
+    ViewData["Title"] = "Payment QR";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-1">Payment QR cua POI</h2>
+            <div class="text-muted">@Model.Poi.Name</div>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <input type="hidden" name="id" value="@Model.Poi.Id" />
+                <div class="col-md-4">
+                    <label class="form-label">Muc tien demo</label>
+                    <select class="form-select" name="amount">
+                        @foreach (var amount in Model.SuggestedAmounts)
+                        {
+                            if (amount == Model.SelectedAmount)
+                            {
+                                <option value="@amount" selected>@amount.ToString("N0") VND</option>
+                            }
+                            else
+                            {
+                                <option value="@amount">@amount.ToString("N0") VND</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary">Cap nhat QR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <img src="@Model.Poi.BuildPaymentQrImageUrl(Model.SelectedAmount)"
+                         alt="@Model.Poi.BuildPaymentQrCode(Model.SelectedAmount)"
+                         class="img-fluid rounded"
+                         style="max-width: 320px;" />
+                    <div class="mt-3 fw-bold fs-5">@Model.SelectedAmount.ToString("N0") VND</div>
+                    <div class="small text-muted">@Model.Poi.BuildPaymentQrCode(Model.SelectedAmount)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h5 class="mb-3">Thong tin QR Payment demo</h5>
+                    <div class="mb-2">
+                        <div class="text-muted small">Deep link mock</div>
+                        <code>@Model.Poi.BuildPaymentQrUri(Model.SelectedAmount)</code>
+                    </div>
+                    <div class="mb-2">
+                        <div class="text-muted small">Ma giao dich demo</div>
+                        <code>@Model.Poi.BuildPaymentQrCode(Model.SelectedAmount)</code>
+                    </div>
+                    <div class="mb-2">
+                        <div class="text-muted small">Diem den</div>
+                        <strong>@Model.Poi.Name</strong>
+                    </div>
+                    <div>
+                        <span class="badge bg-primary">Mock QR Payment</span>
+                        <span class="badge bg-secondary">Chua noi cong thanh toan that</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="mb-3">Cach dung trong do an</h5>
+                    <ol class="mb-0">
+                        <li>Moi POI co mot Payment QR rieng cho tung muc tien demo.</li>
+                        <li>Admin/Owner co the mo trang nay de in hoac chup man hinh ma QR.</li>
+                        <li>Dashboard QR Payment doc du lieu giao dich mock trong backend, khong can cong thanh toan that.</li>
+                        <li>Khi can thuyet minh sequence, co the mo them menu <strong>QR Payment</strong> trong CMS de xem dashboard tong hop.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
