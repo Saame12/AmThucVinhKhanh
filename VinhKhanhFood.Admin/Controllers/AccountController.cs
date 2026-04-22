@@ -87,10 +87,12 @@ public class AccountController : Controller
         {
             var client = _httpClientFactory.CreateClient("MyAPI");
             var users = await client.GetFromJsonAsync<List<User>>("User") ?? new List<User>();
-            ViewBag.ActiveTravelerCount = users.Count(user =>
+            var onlineTravelerCount = users.Count(user =>
                 string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(user.Role, "Owner", StringComparison.OrdinalIgnoreCase));
+
+            ViewBag.ActiveTravelerCount = onlineTravelerCount;
 
             return View(users);
         }

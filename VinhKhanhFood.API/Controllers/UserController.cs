@@ -154,12 +154,12 @@ public class UserController : ControllerBase
         var user = await _context.Users.FindAsync(id);
         if (user is null)
         {
-            return NotFound(new { message = "KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng nÃ y." });
+            return NotFound(new { message = "Không tìm thấy người dùng này." });
         }
 
         if (string.Equals(user.Status?.Trim(), "Blocked", StringComparison.OrdinalIgnoreCase))
         {
-            return BadRequest(new { message = "TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a." });
+            return BadRequest(new { message = "Tài khoản đã bị khóa." });
         }
 
         user.IsVip = true;

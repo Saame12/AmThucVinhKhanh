@@ -30,10 +30,12 @@ public sealed class UserPresenceService
 
     public int GetActiveTravelerCount(IEnumerable<User> users)
     {
-        return users.Count(user =>
+        var onlineTravelerCount = users.Count(user =>
             !string.Equals(user.Role?.Trim(), "Admin", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(user.Role?.Trim(), "Owner", StringComparison.OrdinalIgnoreCase) &&
             string.Equals(GetStatus(user), "Online", StringComparison.OrdinalIgnoreCase));
+        return onlineTravelerCount;
+
     }
 
     public string BuildGuestDisplayName(string? remoteIp, string guestId)
