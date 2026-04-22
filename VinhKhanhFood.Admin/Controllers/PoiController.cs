@@ -1,17 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System.Net.Http.Json;
 using VinhKhanhFood.Admin.Models;
-using VinhKhanhFood.API.Models;
+using ApiFoodLocation = VinhKhanhFood.API.Models.FoodLocation;
 
 namespace VinhKhanhFood.Admin.Controllers
 {
     public class PoiController : Controller
     {
         private readonly HttpClient _http;
+        private readonly IConfiguration _configuration;
 
-        public PoiController()
+        public PoiController(IConfiguration configuration, IHttpClientFactory httpClientFactory)
         {
-            _http = new HttpClient { BaseAddress = new Uri("http://localhost:5020/api/") };
+            _configuration = configuration;
+            _http = httpClientFactory.CreateClient("MyAPI");
         }
 
         public async Task<IActionResult> Index()
@@ -23,7 +26,7 @@ namespace VinhKhanhFood.Admin.Controllers
 
             try
             {
-                var locations = await _http.GetFromJsonAsync<List<FoodLocation>>("Food") ?? new List<FoodLocation>();
+                var locations = await _http.GetFromJsonAsync<List<ApiFoodLocation>>("Food") ?? new List<ApiFoodLocation>();
 
                 var role = HttpContext.Session.GetString("UserRole");
                 var userId = HttpContext.Session.GetInt32("UserId");
@@ -37,7 +40,7 @@ namespace VinhKhanhFood.Admin.Controllers
             }
             catch
             {
-                return View(new List<FoodLocation>());
+                return View(new List<ApiFoodLocation>());
             }
         }
 
@@ -52,7 +55,7 @@ namespace VinhKhanhFood.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(FoodLocation model, IFormFile imageFile, IFormFile audioViFile, IFormFile audioEnFile, IFormFile audioZhFile)
+        public async Task<IActionResult> Create(ApiFoodLocation model, IFormFile imageFile, IFormFile audioViFile, IFormFile audioEnFile, IFormFile audioZhFile)
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
             {
@@ -106,7 +109,7 @@ namespace VinhKhanhFood.Admin.Controllers
 
             try
             {
-                var data = await _http.GetFromJsonAsync<FoodLocation>($"Food/{id}");
+                var data = await _http.GetFromJsonAsync<ApiFoodLocation>($"Food/{id}");
                 return View(data);
             }
             catch
@@ -116,16 +119,72 @@ namespace VinhKhanhFood.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(FoodLocation model, IFormFile imageFile)
+        public async Task<IActionResult> Edit(
+            ApiFoodLocation model,
+            IFormFile imageFile,
+            IFormFile audioViFile,
+            IFormFile audioEnFile,
+            IFormFile audioZhFile,
+            bool keepAudioVi = true,
+            bool keepAudioEn = true,
+            bool keepAudioZh = true)
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
             {
                 return RedirectToAction("Login", "Account");
             }
 
+            ApiFoodLocation? existing;
+            try
+            {
+                existing = await _http.GetFromJsonAsync<ApiFoodLocation>($"Food/{model.Id}");
+            }
+            catch
+            {
+                existing = null;
+            }
+
+            if (existing is null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            model.OwnerId = existing.OwnerId;
+            model.Status = string.IsNullOrWhiteSpace(model.Status) ? existing.Status : model.Status;
+            model.Name_EN = string.IsNullOrWhiteSpace(model.Name_EN) ? existing.Name_EN : model.Name_EN;
+            model.Name_ZH = string.IsNullOrWhiteSpace(model.Name_ZH) ? existing.Name_ZH : model.Name_ZH;
+            model.Description_EN = string.IsNullOrWhiteSpace(model.Description_EN) ? existing.Description_EN : model.Description_EN;
+            model.Description_ZH = string.IsNullOrWhiteSpace(model.Description_ZH) ? existing.Description_ZH : model.Description_ZH;
+            model.AudioUrl = await ResolveAudioValue(existing.AudioUrl, audioViFile, keepAudioVi);
+            model.AudioUrl_EN = await ResolveAudioValue(existing.AudioUrl_EN, audioEnFile, keepAudioEn);
+            model.AudioUrl_ZH = await ResolveAudioValue(existing.AudioUrl_ZH, audioZhFile, keepAudioZh);
+            if (Math.Abs(model.Latitude) < double.Epsilon)
+            {
+                model.Latitude = existing.Latitude;
+            }
+
+            if (Math.Abs(model.Longitude) < double.Epsilon)
+            {
+                model.Longitude = existing.Longitude;
+            }
+
             if (imageFile != null)
             {
                 model.ImageUrl = await SaveFile(imageFile, "images");
+            }
+            else
+            {
+                model.ImageUrl = existing.ImageUrl;
+            }
+
+            async Task<string?> ResolveAudioValue(string? existingValue, IFormFile? newFile, bool keepExisting)
+            {
+                if (newFile != null)
+                {
+                    return await SaveFile(newFile, "audio");
+                }
+
+                return keepExisting ? existingValue : null;
             }
 
             var response = await _http.PutAsJsonAsync($"Food/{model.Id}", model);
@@ -169,7 +228,7 @@ namespace VinhKhanhFood.Admin.Controllers
 
             try
             {
-                var poi = await _http.GetFromJsonAsync<FoodLocation>($"Food/{id}");
+                var poi = await _http.GetFromJsonAsync<ApiFoodLocation>($"Food/{id}");
                 if (poi is null)
                 {
                     return RedirectToAction(nameof(Index));
@@ -192,24 +251,28 @@ namespace VinhKhanhFood.Admin.Controllers
 
             try
             {
-                var poi = await _http.GetFromJsonAsync<FoodLocation>($"Food/{id}");
+                var poi = await _http.GetFromJsonAsync<ApiFoodLocation>($"Food/{id}");
                 if (poi is null)
                 {
                     return RedirectToAction(nameof(Index));
                 }
 
+                const decimal fixedAmount = 10000m;
+                var configuredPublicBaseUrl = _configuration["PublicSiteSettings:BaseUrl"]?.Trim().TrimEnd('/');
+                var useLocalDemoUrl = string.Equals(_configuration["DemoSettings:ForceLocalPaymentPage"], "true", StringComparison.OrdinalIgnoreCase);
+                var localPaymentUrl = Url.Action("Poi", "Payment", new { id = poi.Id }, Request.Scheme) ?? $"{Request.Scheme}://{Request.Host}/Payment/Poi/{poi.Id}";
+                var publicPaymentUrl = useLocalDemoUrl || string.IsNullOrWhiteSpace(configuredPublicBaseUrl)
+                    ? localPaymentUrl
+                    : $"{configuredPublicBaseUrl}/poi.php?id={poi.Id}";
                 var model = new PoiPaymentQrViewModel
                 {
                     Poi = poi,
-                    SelectedAmount = amount.GetValueOrDefault(50000m),
-                    SuggestedAmounts = new List<decimal> { 30000m, 50000m, 100000m, 150000m, 200000m }
+                    FixedAmount = fixedAmount,
+                    PublicPaymentUrl = publicPaymentUrl,
+                    IsLocalDemoUrl = useLocalDemoUrl || string.IsNullOrWhiteSpace(configuredPublicBaseUrl),
+                    QrImageUrl = $"https://quickchart.io/qr?size=320&text={Uri.EscapeDataString(publicPaymentUrl)}",
+                    QrCodeLabel = $"VK-PAY-{poi.Id:D4}-{fixedAmount:0000000}"
                 };
-
-                if (!model.SuggestedAmounts.Contains(model.SelectedAmount))
-                {
-                    model.SuggestedAmounts.Add(model.SelectedAmount);
-                    model.SuggestedAmounts = model.SuggestedAmounts.OrderBy(value => value).ToList();
-                }
 
                 return View(model);
             }

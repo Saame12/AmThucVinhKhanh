@@ -35,7 +35,7 @@ namespace VinhKhanhFood.Admin.Controllers
             var returnUrl = Request.Headers["Referer"].ToString();
             if (string.IsNullOrEmpty(returnUrl))
             {
-                returnUrl = Url.Action("Index", "Home");
+                returnUrl = Url.Action("Index", "Home") ?? "/";
             }
 
             return Redirect(returnUrl);

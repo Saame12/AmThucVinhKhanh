@@ -45,6 +45,15 @@ public class FoodLocation
 
     public string QrCodeImageUrl => $"https://quickchart.io/qr?size=220&text={Uri.EscapeDataString(QrAudioUri)}";
 
+    public string BuildPaymentQrUri(decimal amount) =>
+        $"vinhkhanhpay://payment/poi/{Id}?amount={decimal.Truncate(amount)}&name={Uri.EscapeDataString(Name)}";
+
+    public string BuildPaymentQrCode(decimal amount) =>
+        $"VK-PAY-{Id:D4}-{decimal.Truncate(amount):0000000}";
+
+    public string BuildPaymentQrImageUrl(decimal amount) =>
+        $"https://quickchart.io/qr?size=220&text={Uri.EscapeDataString(BuildPaymentQrUri(amount))}";
+
     public bool HasDefaultAudio =>
         !string.IsNullOrWhiteSpace(Description) ||
         !string.IsNullOrWhiteSpace(Description_EN) ||

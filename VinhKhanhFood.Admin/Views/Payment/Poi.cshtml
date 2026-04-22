@@ -1,0 +1,418 @@
+@model VinhKhanhFood.Admin.Models.PublicPoiPaymentViewModel
+
+@{
+    ViewData["Title"] = Model.Poi.Name is { Length: > 0 } ? Model.Poi.Name : "POI Payment";
+    var message = Model.PaymentMessage;
+    var hasAnyAudio =
+        !string.IsNullOrWhiteSpace(Model.VietnameseAudioUrl) ||
+        !string.IsNullOrWhiteSpace(Model.EnglishAudioUrl) ||
+        !string.IsNullOrWhiteSpace(Model.ChineseAudioUrl);
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fffaf5;
+            --surface: #ffffff;
+            --surface-soft: #fff3e6;
+            --line: #f3d9bd;
+            --primary: #e85d2a;
+            --primary-dark: #bb4318;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --success-bg: #ecfdf5;
+            --success-text: #047857;
+            --warn-bg: #fff7ed;
+            --warn-text: #c2410c;
+            --shadow: 0 18px 38px rgba(232, 93, 42, 0.12);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Be Vietnam Pro", sans-serif;
+            background:
+                radial-gradient(circle at top right, rgba(255, 211, 185, 0.55), transparent 32%),
+                linear-gradient(180deg, #fffdfb 0%, var(--bg) 100%);
+            color: var(--text);
+        }
+
+        .page {
+            width: min(960px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 40px;
+        }
+
+        .hero {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .hero-image-wrap {
+            padding: 18px;
+            background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+        }
+
+        .hero-image {
+            width: 100%;
+            max-height: 340px;
+            object-fit: contain;
+            border-radius: 20px;
+            background: #fff;
+            display: block;
+        }
+
+        .hero-content {
+            padding: 24px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--surface-soft);
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 14px 0 10px;
+            font-size: clamp(28px, 4vw, 40px);
+            line-height: 1.12;
+        }
+
+        .description {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 20px;
+            margin-top: 22px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .status {
+            margin-bottom: 16px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .status.success {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .status.warn {
+            background: var(--warn-bg);
+            color: var(--warn-text);
+        }
+
+        .price {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .price strong {
+            font-size: 32px;
+            line-height: 1;
+        }
+
+        .unlock-form {
+            margin-top: 14px;
+        }
+
+        .button {
+            width: 100%;
+            border: none;
+            border-radius: 18px;
+            padding: 16px 18px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 14px 28px rgba(232, 93, 42, 0.24);
+        }
+
+        .button:hover {
+            background: var(--primary-dark);
+        }
+
+        .meta-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .meta-item {
+            padding: 14px 16px;
+            background: #fff7ed;
+            border-radius: 18px;
+        }
+
+        .meta-item small {
+            display: block;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .audio-grid {
+            display: grid;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .audio-item {
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: #fffdfb;
+        }
+
+        .audio-item h3 {
+            margin: 0 0 10px;
+            font-size: 17px;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        @@media (max-width: 860px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <section class="hero">
+            <div class="hero-image-wrap">
+                <img class="hero-image" src="@Model.PoiImageUrl" alt="@Model.Poi.Name" />
+            </div>
+            <div class="hero-content">
+                <span class="eyebrow">QR Payment POI</span>
+                <h1>@Model.Poi.Name</h1>
+                <p class="description">@Model.Poi.Description</p>
+            </div>
+        </section>
+
+        <section class="grid">
+            <div class="card">
+                <h2>Thong tin diem den</h2>
+                <p>Ban co the xem mo ta cua POI nay mien phi ngay tren trang web public. Audio se bi khoa cho den khi hoan tat thanh toan QR.</p>
+
+                <div class="meta-list">
+                    @if (!string.IsNullOrWhiteSpace(Model.Poi.Description_EN))
+                    {
+                        <div class="meta-item">
+                            <small>Description (English)</small>
+                            <div>@Model.Poi.Description_EN</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Poi.Description_ZH))
+                    {
+                        <div class="meta-item">
+                            <small>Description (Chinese)</small>
+                            <div>@Model.Poi.Description_ZH</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                @if (message == "paid")
+                {
+                    <div class="status success">Thanh toan thanh cong. Toan bo audio cua POI nay da duoc mo khoa cho thiet bi hien tai.</div>
+                }
+                else if (message == "payment-error" || message == "server-error")
+                {
+                    <div class="status warn">Khong the xu ly thanh toan luc nay. Vui long thu lai sau.</div>
+                }
+
+                @if (Model.HasPaidAccess)
+                {
+                    <div class="status success">Audio da duoc mo khoa. Ban co the nghe tat ca audio ben duoi.</div>
+                }
+                else
+                {
+                    <div class="status warn">Audio hien dang bi khoa. Ban can thanh toan mot lan 10.000 VND de nghe tat ca audio cua diem den nay.</div>
+                    <div class="price">
+                        <strong>@Model.FixedAmount.ToString("N0")</strong>
+                        <span>VND / lan quet</span>
+                    </div>
+                    <form class="unlock-form" method="post" action="@Url.Action("UnlockPoi", "Payment", new { id = Model.Poi.Id })">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="button">Thanh toan 10.000 VND de mo khoa audio</button>
+                    </form>
+                }
+
+                <div class="meta-list">
+                    <div class="meta-item">
+                        <small>Ma khach quet</small>
+                        <div>@Model.GuestId</div>
+                    </div>
+                    <div class="meta-item">
+                        <small>Pham vi mo khoa</small>
+                        <div>Tat ca audio cua POI nay tren trang public</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top: 22px;">
+            <h2>Audio cua POI</h2>
+
+            @if (!Model.HasPaidAccess)
+            {
+                <p>Ban dang o che do xem thong tin. Audio se chi hien sau khi thanh toan thanh cong.</p>
+            }
+            else
+            {
+                <div class="audio-grid">
+                    @if (!string.IsNullOrWhiteSpace(Model.Poi.Description))
+                    {
+                        <div class="audio-item">
+                            <h3>Audio mo ta tieng Viet</h3>
+                            <p>Doc noi dung mo ta bang giong doc trinh duyet tren trang public.</p>
+                            <button type="button"
+                                    class="button"
+                                    style="margin-top:10px;"
+                                    onclick="speakText('vi-VN', @Html.Raw(Json.Serialize(Model.Poi.Description)))">
+                                Phat audio mo ta
+                            </button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Poi.Description_EN))
+                    {
+                        <div class="audio-item">
+                            <h3>Audio mo ta English</h3>
+                            <p>Read the English description with browser speech.</p>
+                            <button type="button"
+                                    class="button"
+                                    style="margin-top:10px;"
+                                    onclick="speakText('en-US', @Html.Raw(Json.Serialize(Model.Poi.Description_EN)))">
+                                Play description audio
+                            </button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Poi.Description_ZH))
+                    {
+                        <div class="audio-item">
+                            <h3>Audio mo ta Chinese</h3>
+                            <p>Doc mo ta tieng Trung bang giong doc cua trinh duyet.</p>
+                            <button type="button"
+                                    class="button"
+                                    style="margin-top:10px;"
+                                    onclick="speakText('zh-CN', @Html.Raw(Json.Serialize(Model.Poi.Description_ZH)))">
+                                Phat audio mo ta
+                            </button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.VietnameseAudioUrl))
+                    {
+                        <div class="audio-item">
+                            <h3>Audio file tieng Viet</h3>
+                            <p>File audio upload cho noi dung tieng Viet.</p>
+                            <audio controls preload="none">
+                                <source src="@Model.VietnameseAudioUrl" type="audio/mpeg" />
+                            </audio>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.EnglishAudioUrl))
+                    {
+                        <div class="audio-item">
+                            <h3>Audio file English</h3>
+                            <p>Uploaded audio track for the English content.</p>
+                            <audio controls preload="none">
+                                <source src="@Model.EnglishAudioUrl" type="audio/mpeg" />
+                            </audio>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ChineseAudioUrl))
+                    {
+                        <div class="audio-item">
+                            <h3>Audio file Chinese</h3>
+                            <p>Uploaded audio track for the Chinese content.</p>
+                            <audio controls preload="none">
+                                <source src="@Model.ChineseAudioUrl" type="audio/mpeg" />
+                            </audio>
+                        </div>
+                    }
+                </div>
+
+                @if (!hasAnyAudio &&
+                    string.IsNullOrWhiteSpace(Model.Poi.Description) &&
+                    string.IsNullOrWhiteSpace(Model.Poi.Description_EN) &&
+                    string.IsNullOrWhiteSpace(Model.Poi.Description_ZH))
+                {
+                    <p>POI nay hien chua co audio hoac noi dung mo ta de phat.</p>
+                }
+            }
+        </section>
+    </main>
+
+    <script>
+        function speakText(language, text) {
+            if (!text || !('speechSynthesis' in window)) {
+                alert('Trinh duyet hien tai khong ho tro phat audio mo ta.');
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = language;
+            window.speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>

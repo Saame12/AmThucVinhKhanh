@@ -6,6 +6,9 @@ public class PaymentTransaction
     public string TransactionCode { get; set; } = string.Empty;
     public int PoiId { get; set; }
     public string PoiName { get; set; } = string.Empty;
+    public int? UserId { get; set; }
+    public string GuestId { get; set; } = string.Empty;
+    public string PurchaserDisplayName { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "VND";
     public string PaymentType { get; set; } = "QR_PAYMENT";
@@ -24,11 +27,14 @@ public class PaymentDashboardViewModel
     public DateTime EndDate { get; set; }
     public int? SelectedPoiId { get; set; }
     public string? SelectedStatus { get; set; }
+    public bool IsDemoData { get; set; }
+    public string? DemoMessage { get; set; }
     public int TotalTransactions { get; set; }
     public int PaidTransactions { get; set; }
     public int PendingTransactions { get; set; }
     public int FailedTransactions { get; set; }
     public int ReconciledTransactions { get; set; }
+    public int UnlockedPurchases { get; set; }
     public decimal TotalRevenue { get; set; }
     public decimal AverageOrderValue { get; set; }
     public List<FoodLocation> Pois { get; set; } = [];

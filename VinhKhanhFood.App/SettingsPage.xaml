@@ -147,6 +147,39 @@
                     StrokeShape="RoundRectangle 24"
                     Padding="18">
                 <VerticalStackLayout Spacing="10">
+                    <Label x:Name="TravelerSectionTitleLabel"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}" />
+                    <Label x:Name="TravelerSectionSubtitleLabel"
+                           FontSize="13"
+                           TextColor="{StaticResource TextSecondary}" />
+                    <Border BackgroundColor="#F8FAFC"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 18"
+                            Padding="14">
+                        <VerticalStackLayout Spacing="6">
+                            <Label x:Name="GuidCaptionLabel"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   TextColor="#E85D2A" />
+                            <Label x:Name="GuidValueLabel"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label x:Name="GuidHintLabel"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border BackgroundColor="{StaticResource SurfaceLight}"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 24"
+                    Padding="18">
+                <VerticalStackLayout Spacing="10">
                     <Label x:Name="VersionTitleLabel"
                            FontSize="18"
                            FontAttributes="Bold"

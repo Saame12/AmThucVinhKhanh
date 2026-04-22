@@ -18,6 +18,7 @@ public static class DbInitializer
             await EnsureUsersVipColumnAsync(connection, cancellationToken);
             await EnsureUsersVirtualColumnsAsync(connection, cancellationToken);
             await EnsurePaymentTransactionsTableAsync(connection, cancellationToken);
+            await EnsurePoiAudioUnlocksTableAsync(connection, cancellationToken);
             await SeedMockPaymentTransactionsAsync(context, cancellationToken);
         }
         finally
@@ -104,6 +105,9 @@ public static class DbInitializer
                 TransactionCode TEXT NOT NULL,
                 PoiId INTEGER NOT NULL,
                 PoiName TEXT NOT NULL,
+                UserId INTEGER NULL,
+                GuestId TEXT NOT NULL DEFAULT '',
+                PurchaserDisplayName TEXT NOT NULL DEFAULT '',
                 Amount REAL NOT NULL,
                 Currency TEXT NOT NULL,
                 PaymentType TEXT NOT NULL,
@@ -120,6 +124,130 @@ public static class DbInitializer
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
         await command.ExecuteNonQueryAsync(cancellationToken);
+
+        var columns = await GetTableColumnsAsync(connection, "PaymentTransactions", cancellationToken);
+
+        if (!columns.Contains("PoiName", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN PoiName TEXT NOT NULL DEFAULT '';", cancellationToken);
+        }
+
+        if (!columns.Contains("UserId", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN UserId INTEGER NULL;", cancellationToken);
+        }
+
+        if (!columns.Contains("GuestId", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN GuestId TEXT NOT NULL DEFAULT '';", cancellationToken);
+        }
+
+        if (!columns.Contains("PurchaserDisplayName", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN PurchaserDisplayName TEXT NOT NULL DEFAULT '';", cancellationToken);
+        }
+
+        if (!columns.Contains("CustomerLabel", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN CustomerLabel TEXT NOT NULL DEFAULT '';", cancellationToken);
+        }
+
+        if (!columns.Contains("Currency", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN Currency TEXT NOT NULL DEFAULT 'VND';", cancellationToken);
+        }
+
+        if (!columns.Contains("PaymentType", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN PaymentType TEXT NOT NULL DEFAULT 'QR_PAYMENT';", cancellationToken);
+        }
+
+        if (!columns.Contains("Provider", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN Provider TEXT NOT NULL DEFAULT 'MockQR';", cancellationToken);
+        }
+
+        if (!columns.Contains("Status", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN Status TEXT NOT NULL DEFAULT 'Pending';", cancellationToken);
+        }
+
+        if (!columns.Contains("Note", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN Note TEXT NULL;", cancellationToken);
+        }
+
+        if (!columns.Contains("PaidAt", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN PaidAt TEXT NULL;", cancellationToken);
+        }
+
+        if (!columns.Contains("ReconciledAt", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PaymentTransactions ADD COLUMN ReconciledAt TEXT NULL;", cancellationToken);
+        }
+    }
+
+    private static async Task EnsurePoiAudioUnlocksTableAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            CREATE TABLE IF NOT EXISTS PoiAudioUnlocks (
+                Id INTEGER NOT NULL CONSTRAINT PK_PoiAudioUnlocks PRIMARY KEY AUTOINCREMENT,
+                PoiId INTEGER NOT NULL,
+                UserId INTEGER NULL,
+                GuestId TEXT NOT NULL DEFAULT '',
+                PurchaserDisplayName TEXT NOT NULL DEFAULT '',
+                PaymentTransactionId INTEGER NOT NULL,
+                UnlockedAt TEXT NOT NULL
+            );
+            """;
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        await command.ExecuteNonQueryAsync(cancellationToken);
+
+        var columns = await GetTableColumnsAsync(connection, "PoiAudioUnlocks", cancellationToken);
+
+        if (!columns.Contains("UserId", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PoiAudioUnlocks ADD COLUMN UserId INTEGER NULL;", cancellationToken);
+        }
+
+        if (!columns.Contains("GuestId", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PoiAudioUnlocks ADD COLUMN GuestId TEXT NOT NULL DEFAULT '';", cancellationToken);
+        }
+
+        if (!columns.Contains("PurchaserDisplayName", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PoiAudioUnlocks ADD COLUMN PurchaserDisplayName TEXT NOT NULL DEFAULT '';", cancellationToken);
+        }
+
+        if (!columns.Contains("PaymentTransactionId", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PoiAudioUnlocks ADD COLUMN PaymentTransactionId INTEGER NOT NULL DEFAULT 0;", cancellationToken);
+        }
+
+        if (!columns.Contains("UnlockedAt", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE PoiAudioUnlocks ADD COLUMN UnlockedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP;", cancellationToken);
+        }
+    }
+
+    private static async Task<HashSet<string>> GetTableColumnsAsync(SqliteConnection connection, string tableName, CancellationToken cancellationToken)
+    {
+        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info('{tableName}');";
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            columns.Add(reader.GetString(1));
+        }
+
+        return columns;
     }
 
     private static async Task SeedMockPaymentTransactionsAsync(AppDbContext context, CancellationToken cancellationToken)
@@ -170,6 +298,9 @@ public static class DbInitializer
                         TransactionCode = $"QR-{createdAt:yyyyMMdd}-{poi.Id:D3}-{index + 1:D2}-{random.Next(100, 999)}",
                         PoiId = poi.Id,
                         PoiName = poi.Name,
+                        UserId = null,
+                        GuestId = $"guest-{random.Next(1000, 9999)}",
+                        PurchaserDisplayName = $"guid-mock-{random.Next(1000, 9999)}",
                         Amount = amount,
                         Currency = "VND",
                         PaymentType = "QR_PAYMENT",
