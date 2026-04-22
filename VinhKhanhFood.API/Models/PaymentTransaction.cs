@@ -6,6 +6,9 @@ public class PaymentTransaction
     public string TransactionCode { get; set; } = string.Empty;
     public int PoiId { get; set; }
     public string PoiName { get; set; } = string.Empty;
+    public int? UserId { get; set; }
+    public string GuestId { get; set; } = string.Empty;
+    public string PurchaserDisplayName { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "VND";
     public string PaymentType { get; set; } = "QR_PAYMENT";
@@ -16,4 +19,15 @@ public class PaymentTransaction
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? PaidAt { get; set; }
     public DateTime? ReconciledAt { get; set; }
+}
+
+public class PoiAudioUnlock
+{
+    public int Id { get; set; }
+    public int PoiId { get; set; }
+    public int? UserId { get; set; }
+    public string GuestId { get; set; } = string.Empty;
+    public string PurchaserDisplayName { get; set; } = string.Empty;
+    public int PaymentTransactionId { get; set; }
+    public DateTime UnlockedAt { get; set; } = DateTime.Now;
 }

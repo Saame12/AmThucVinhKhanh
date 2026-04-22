@@ -48,6 +48,7 @@ public class PaymentController : ControllerBase
             reconciledTransactions = transactions.Count(item => item.ReconciledAt.HasValue),
             totalRevenue = paidTransactions.Sum(item => item.Amount),
             averageOrderValue = paidTransactions.Count == 0 ? 0 : decimal.Round(paidTransactions.Average(item => item.Amount), 0),
+            unlockedPurchases = paidTransactions.Count(item => IsUnlockPurchase(item)),
             topPois = paidTransactions
                 .GroupBy(item => new { item.PoiId, item.PoiName })
                 .Select(group => new
@@ -77,6 +78,110 @@ public class PaymentController : ControllerBase
         };
 
         return Ok(dashboard);
+    }
+
+    [HttpGet("access")]
+    public async Task<IActionResult> GetProfessionalAccess([FromQuery] int poiId, [FromQuery] int? userId, [FromQuery] string? guestId)
+    {
+        if (poiId <= 0)
+        {
+            return BadRequest(new { message = "PoiId is required." });
+        }
+
+        var poi = await _context.FoodLocations.FindAsync(poiId);
+        if (poi is null)
+        {
+            return NotFound(new { message = "POI not found." });
+        }
+
+        var hasVip = false;
+        if (userId.HasValue && userId.Value > 0)
+        {
+            hasVip = await _context.Users
+                .Where(user => user.Id == userId.Value)
+                .Select(user => user.IsVip)
+                .FirstOrDefaultAsync();
+        }
+
+        var hasPoiUnlock = await FindExistingUnlockAsync(poiId, userId, guestId) is not null;
+
+        return Ok(new
+        {
+            poiId,
+            hasProfessionalAudio = poi.HasProfessionalAudio,
+            hasAccess = hasVip || hasPoiUnlock,
+            accessType = hasVip ? "VIP" : hasPoiUnlock ? "POI_UNLOCK" : "NONE"
+        });
+    }
+
+    [HttpPost("mock-checkout")]
+    public async Task<IActionResult> MockCheckout([FromBody] MockCheckoutRequest request)
+    {
+        if (request.PoiId <= 0)
+        {
+            return BadRequest(new { message = "PoiId is required." });
+        }
+
+        if (request.Amount <= 0)
+        {
+            return BadRequest(new { message = "Amount must be greater than zero." });
+        }
+
+        var poi = await _context.FoodLocations.FindAsync(request.PoiId);
+        if (poi is null)
+        {
+            return NotFound(new { message = "POI not found." });
+        }
+
+        var purchaserDisplayName = await ResolvePurchaserDisplayNameAsync(request.UserId, request.GuestId);
+
+        var transaction = new PaymentTransaction
+        {
+            TransactionCode = $"QR-{DateTime.Now:yyyyMMddHHmmss}-{request.PoiId:D4}",
+            PoiId = poi.Id,
+            PoiName = poi.Name,
+            UserId = request.UserId > 0 ? request.UserId : null,
+            GuestId = request.GuestId?.Trim() ?? string.Empty,
+            PurchaserDisplayName = purchaserDisplayName,
+            Amount = decimal.Round(request.Amount, 0),
+            Currency = "VND",
+            PaymentType = "QR_PAYMENT",
+            Provider = string.IsNullOrWhiteSpace(request.Provider) ? "MockQR" : request.Provider.Trim(),
+            Status = "Paid",
+            CustomerLabel = purchaserDisplayName,
+            Note = "Mock QR checkout success.",
+            CreatedAt = DateTime.Now,
+            PaidAt = DateTime.Now
+        };
+
+        _context.PaymentTransactions.Add(transaction);
+        await _context.SaveChangesAsync();
+
+        var existingUnlock = await FindExistingUnlockAsync(poi.Id, transaction.UserId, transaction.GuestId);
+        if (existingUnlock is null)
+        {
+            _context.PoiAudioUnlocks.Add(new PoiAudioUnlock
+            {
+                PoiId = poi.Id,
+                UserId = transaction.UserId,
+                GuestId = transaction.GuestId,
+                PurchaserDisplayName = purchaserDisplayName,
+                PaymentTransactionId = transaction.Id,
+                UnlockedAt = DateTime.Now
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(new
+        {
+            transactionId = transaction.Id,
+            transactionCode = transaction.TransactionCode,
+            poiId = poi.Id,
+            poiName = poi.Name,
+            amount = transaction.Amount,
+            hasAccess = true,
+            accessType = "POI_UNLOCK"
+        });
     }
 
     [HttpPut("reconcile/{id:int}")]
@@ -123,4 +228,53 @@ public class PaymentController : ControllerBase
 
         return query;
     }
+
+    private async Task<string> ResolvePurchaserDisplayNameAsync(int? userId, string? guestId)
+    {
+        if (userId.HasValue && userId.Value > 0)
+        {
+            var user = await _context.Users.FindAsync(userId.Value);
+            if (user is not null)
+            {
+                return string.IsNullOrWhiteSpace(user.FullName) ? user.Username : user.FullName;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(guestId))
+        {
+            var virtualUser = await _context.Users.FirstOrDefaultAsync(user => user.IsVirtual && user.GuestId == guestId);
+            if (virtualUser is not null)
+            {
+                return string.IsNullOrWhiteSpace(virtualUser.FullName) ? virtualUser.Username : virtualUser.FullName;
+            }
+
+            return $"guid-{guestId.Trim()}";
+        }
+
+        return "Guest";
+    }
+
+    private Task<PoiAudioUnlock?> FindExistingUnlockAsync(int poiId, int? userId, string? guestId)
+    {
+        guestId ??= string.Empty;
+        return _context.PoiAudioUnlocks.FirstOrDefaultAsync(unlock =>
+            unlock.PoiId == poiId &&
+            (
+                (userId.HasValue && userId.Value > 0 && unlock.UserId == userId.Value) ||
+                (!string.IsNullOrWhiteSpace(guestId) && unlock.GuestId == guestId)
+            ));
+    }
+
+    private static bool IsUnlockPurchase(PaymentTransaction item) =>
+        string.Equals(item.Status, "Paid", StringComparison.OrdinalIgnoreCase) &&
+        (!string.IsNullOrWhiteSpace(item.GuestId) || item.UserId.HasValue);
+}
+
+public sealed class MockCheckoutRequest
+{
+    public int PoiId { get; set; }
+    public decimal Amount { get; set; }
+    public int? UserId { get; set; }
+    public string? GuestId { get; set; }
+    public string? Provider { get; set; }
 }

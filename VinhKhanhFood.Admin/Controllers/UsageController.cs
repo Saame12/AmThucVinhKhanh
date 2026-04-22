@@ -8,9 +8,9 @@ public class UsageController : Controller
 {
     private readonly HttpClient _http;
 
-    public UsageController()
+    public UsageController(IHttpClientFactory httpClientFactory)
     {
-        _http = new HttpClient { BaseAddress = new Uri("http://localhost:5020/api/") };
+        _http = httpClientFactory.CreateClient("MyAPI");
     }
 
     public async Task<IActionResult> Index(string period = "week")

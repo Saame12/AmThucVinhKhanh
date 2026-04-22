@@ -9,7 +9,9 @@ public partial class DetailPage : ContentPage
     private readonly bool _autoPlayAudio;
     private readonly AudioGuideService _audioGuideService = App.AudioGuide;
     private readonly UsageTrackingService _usageTrackingService = new();
+    private readonly PaymentService _paymentService = new();
     private bool _hasTrackedView;
+    private bool _hasProfessionalAccess;
 
     public DetailPage(FoodLocation location, bool autoPlayAudio = false)
     {
@@ -29,6 +31,8 @@ public partial class DetailPage : ContentPage
         LocalizationService.LanguageChanged += OnLanguageChanged;
         _audioGuideService.StateChanged += OnAudioStateChanged;
         App.Auth.SessionChanged += OnSessionChanged;
+
+        await RefreshProfessionalAccessAsync();
 
         if (!_hasTrackedView)
         {
@@ -61,7 +65,11 @@ public partial class DetailPage : ContentPage
 
     private void OnSessionChanged(object? sender, UserSession? e)
     {
-        MainThread.BeginInvokeOnMainThread(UpdateContent);
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            await RefreshProfessionalAccessAsync();
+            UpdateContent();
+        });
     }
 
     private void OnAudioStateChanged(object? sender, AudioGuideStateChangedEventArgs e)
@@ -116,22 +124,22 @@ public partial class DetailPage : ContentPage
         }
 
         var session = App.Auth.CurrentSession;
+        if (session?.IsVip == true || _hasProfessionalAccess)
+        {
+            ProfessionalAudioStatusLabel.Text = GetProfessionalReadyText();
+            PlayProfessionalAudioButton.Text = GetProfessionalPlayText();
+            return;
+        }
+
         if (session is null)
         {
             ProfessionalAudioStatusLabel.Text = GetProfessionalGuestText();
-            PlayProfessionalAudioButton.Text = GetProfessionalLoginButtonText();
+            PlayProfessionalAudioButton.Text = GetProfessionalUnlockText();
             return;
         }
 
-        if (!session.IsVip)
-        {
-            ProfessionalAudioStatusLabel.Text = GetProfessionalLockedText();
-            PlayProfessionalAudioButton.Text = GetProfessionalBuyVipText();
-            return;
-        }
-
-        ProfessionalAudioStatusLabel.Text = GetProfessionalReadyText();
-        PlayProfessionalAudioButton.Text = GetProfessionalPlayText();
+        ProfessionalAudioStatusLabel.Text = GetProfessionalLockedText();
+        PlayProfessionalAudioButton.Text = GetProfessionalUnlockText();
     }
 
     private async Task PlayCurrentPoiAudioAsync()
@@ -166,21 +174,33 @@ public partial class DetailPage : ContentPage
     private async void OnPlayProfessionalAudioClicked(object sender, EventArgs e)
     {
         var session = App.Auth.CurrentSession;
-        if (session is null)
-        {
-            await DisplayAlert(LocalizationService.GetString("Info"), LocalizationService.GetString("LoginToYourAccount"), LocalizationService.GetString("OK"));
-            await Navigation.PushModalAsync(new NavigationPage(new LoginPage()));
-            return;
-        }
 
-        if (!session.IsVip)
+        if (!(session?.IsVip == true) && !_hasProfessionalAccess)
         {
-            await DisplayAlert(LocalizationService.GetString("Info"), GetProfessionalNeedVipText(), LocalizationService.GetString("OK"));
-            await Shell.Current.GoToAsync("//SettingsTab");
+            await Navigation.PushAsync(new PaymentCheckoutPage(_currentLocation, 50000m));
             return;
         }
 
         await PlayProfessionalAudioAsync();
+    }
+
+    private async Task RefreshProfessionalAccessAsync()
+    {
+        if (!_currentLocation.HasProfessionalAudio)
+        {
+            _hasProfessionalAccess = false;
+            return;
+        }
+
+        var session = App.Auth.CurrentSession;
+        if (session?.IsVip == true)
+        {
+            _hasProfessionalAccess = true;
+            return;
+        }
+
+        var access = await _paymentService.GetProfessionalAccessAsync(_currentLocation.Id);
+        _hasProfessionalAccess = access.HasAccess;
     }
 
     private void OnCancelAudioClicked(object sender, EventArgs e)
@@ -242,18 +262,11 @@ public partial class DetailPage : ContentPage
         _ => "Tai khoan VIP cua ban co the phat audio chuyen nghiep da upload."
     };
 
-    private static string GetProfessionalLoginButtonText() => LocalizationService.CurrentLanguage switch
+    private static string GetProfessionalUnlockText() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "Login to unlock",
-        "zh" => "\u767B\u5F55\u540E\u89E3\u9501",
-        _ => "Dang nhap de mo khoa"
-    };
-
-    private static string GetProfessionalBuyVipText() => LocalizationService.CurrentLanguage switch
-    {
-        "en" => "Buy VIP in Settings",
-        "zh" => "\u524D\u5F80\u8BBE\u7F6E\u8D2D\u4E70 VIP",
-        _ => "Mua VIP trong Cai dat"
+        "en" => "Unlock with QR payment",
+        "zh" => "\u4F7F\u7528 QR \u652F\u4ED8\u89E3\u9501",
+        _ => "Mo khoa bang QR payment"
     };
 
     private static string GetProfessionalPlayText() => LocalizationService.CurrentLanguage switch
@@ -261,13 +274,6 @@ public partial class DetailPage : ContentPage
         "en" => "Play professional audio",
         "zh" => "\u64AD\u653E\u4E13\u4E1A\u97F3\u9891",
         _ => "Phat audio chuyen nghiep"
-    };
-
-    private static string GetProfessionalNeedVipText() => LocalizationService.CurrentLanguage switch
-    {
-        "en" => "Please purchase VIP in Settings to listen to this professional audio.",
-        "zh" => "\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u8D2D\u4E70 VIP \u540E\u518D\u6536\u542C\u6B64\u4E13\u4E1A\u97F3\u9891\u3002",
-        _ => "Hay mua VIP trong Cai dat de nghe audio chuyen nghiep nay."
     };
 
     private static string GetProfessionalMissingText() => LocalizationService.CurrentLanguage switch

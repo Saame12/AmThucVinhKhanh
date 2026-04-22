@@ -33,6 +33,7 @@ public static class ApiEndpointResolver
 
     public static string FoodEndpoint => $"{BaseApiUrl}/Food";
     public static string UserEndpoint => $"{BaseApiUrl}/User";
+    public static string PaymentEndpoint => $"{BaseApiUrl}/Payment";
 
     public static void SetDevelopmentBaseUrl(string? baseUrl)
     {

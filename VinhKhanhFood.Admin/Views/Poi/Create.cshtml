@@ -2,100 +2,178 @@
 
 @{
     ViewData["Title"] = "Create New POI";
+    var placeholderImage = "https://placehold.co/960x720/FFF7ED/C2410C?text=POI+Preview";
 }
 
 <div class="container mt-4">
-    <h2 class="mb-4">➕ Add New Food Location</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Add New POI</h2>
+            <p class="text-muted mb-0">Tao noi dung va hinh anh ngay tu dau theo khung hien thi an toan cho mobile, tablet va desktop.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to list</a>
+    </div>
 
     <form asp-action="Create" enctype="multipart/form-data" method="post">
-        <div class="row">
-            <div class="col-md-7">
-                <div class="card p-3 shadow-sm mb-3">
-                    <h5 class="text-primary border-bottom pb-2">Basic Information</h5>
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="mb-3 text-primary">Basic Information</h5>
 
-                    <div class="mb-3">
-                        <label class="form-label">Location Name (Vietnamese)</label>
-                        <input name="Name" class="form-control" required placeholder="Ví dụ: Ốc Thảo" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Location Name (English)</label>
-                        <input name="Name_EN" class="form-control" placeholder="Example: Thao Snail Restaurant" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Location Name (Chinese)</label>
-                        <input name="Name_ZH" class="form-control" placeholder="示例：涛螺餐厅" />
-                    </div>
-
-                    <div class="row">
-                        <div class="col">
-                            <label class="form-label">Latitude</label>
-                            <input name="Latitude" class="form-control" placeholder="10.762..." />
+                        <div class="mb-3">
+                            <label class="form-label">Location Name (Vietnamese)</label>
+                            <input name="Name" class="form-control" required placeholder="Example: Oc Thao" />
                         </div>
-                        <div class="col">
-                            <label class="form-label">Longitude</label>
-                            <input name="Longitude" class="form-control" placeholder="106.682..." />
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Location Name (English)</label>
+                                <input name="Name_EN" class="form-control" placeholder="Example: Thao Snail Restaurant" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Location Name (Chinese)</label>
+                                <input name="Name_ZH" class="form-control" placeholder="Example: Tao Snail Restaurant" />
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label class="form-label">Latitude</label>
+                                <input name="Latitude" class="form-control" placeholder="10.762..." />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Longitude</label>
+                                <input name="Longitude" class="form-control" placeholder="106.682..." />
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label">Main Image</label>
+                            <input type="file"
+                                   name="imageFile"
+                                   id="imageFile"
+                                   class="form-control"
+                                   accept="image/*" />
                         </div>
                     </div>
+                </div>
 
-                    <div class="mt-3">
-                        <label class="form-label">Main Image</label>
-                        <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                <div class="card bg-light shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h5 class="mb-3 text-success">Default Audio Content</h5>
+                        <p class="text-muted small">Owner chi can nhap mo ta. App se dung noi dung nay de doc audio mac dinh bang TTS.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description (Vietnamese)</label>
+                            <textarea name="Description" class="form-control" rows="4"></textarea>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Description (English)</label>
+                                <textarea name="Description_EN" class="form-control" rows="4"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Description (Chinese)</label>
+                                <textarea name="Description_ZH" class="form-control" rows="4"></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-5">
-                <div class="card bg-light p-3 shadow-sm border-0 mb-3">
-                    <h5 class="text-success border-bottom pb-2"><i class="bi bi-soundwave"></i> Default Audio</h5>
-                    <p class="text-muted small mb-3">Owner chỉ cần nhập mô tả. App sẽ dùng phần mô tả này làm audio mặc định bằng TTS khi user mở POI hoặc quét QR.</p>
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="mb-3 text-warning">Image Display Preview</h5>
 
-                    <div class="mb-3">
-                        <label>Mô tả (Vietnamese)</label>
-                        <textarea name="Description" class="form-control" rows="3"></textarea>
-                    </div>
+                        <div class="poi-image-frame mb-3">
+                            <img id="poiPreviewImage"
+                                 src="@placeholderImage"
+                                 alt="POI preview"
+                                 class="poi-image-preview" />
+                        </div>
 
-                    <div class="mb-3">
-                        <label>Description (English)</label>
-                        <textarea name="Description_EN" class="form-control" rows="3"></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>描述 (Chinese)</label>
-                        <textarea name="Description_ZH" class="form-control" rows="3"></textarea>
+                        <div class="alert alert-light border mb-0">
+                            <div class="fw-semibold mb-2">Recommended image rule</div>
+                            <ul class="small text-muted mb-0 ps-3">
+                                <li>Use 4:3 or 1:1 images whenever possible.</li>
+                                <li>Keep the food dish or shop facade near the center.</li>
+                                <li>The app now prefers full-image display to reduce cropping on smaller devices.</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
-                <div class="card bg-light p-3 shadow-sm border-0">
-                    <h5 class="text-warning border-bottom pb-2"><i class="bi bi-stars"></i> Professional Audio</h5>
-                    <p class="text-muted small mb-3">Nếu owner tự upload audio thì audio này sẽ được hiểu là audio chuyên nghiệp và có thể khóa quyền nghe trong app.</p>
+                <div class="card bg-light shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h5 class="mb-3 text-danger">Professional Audio Upload</h5>
+                        <p class="text-muted small">Neu owner tu upload audio thi phan nay duoc hieu la audio chuyen nghiep.</p>
 
-                    <div class="mb-3">
-                        <label class="fw-bold">🎧 Tiếng Việt</label>
-                        <input type="file" name="audioViFile" class="form-control" accept="audio/*" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label">Audio file (Vietnamese)</label>
+                            <input type="file" name="audioViFile" class="form-control" accept="audio/*" />
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="fw-bold">🎧 English</label>
-                        <input type="file" name="audioEnFile" class="form-control" accept="audio/*" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label">Audio file (English)</label>
+                            <input type="file" name="audioEnFile" class="form-control" accept="audio/*" />
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="fw-bold">🎧 中文</label>
-                        <input type="file" name="audioZhFile" class="form-control" accept="audio/*" />
-                    </div>
-
-                    <div class="alert alert-info py-2 mb-0">
-                        <small><i class="bi bi-info-circle"></i> Chấp nhận .mp3, .wav. QR của POI sẽ luôn mở audio mặc định.</small>
+                        <div class="mb-0">
+                            <label class="form-label">Audio file (Chinese)</label>
+                            <input type="file" name="audioZhFile" class="form-control" accept="audio/*" />
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="mt-4 border-top pt-3 text-end">
-            <a asp-action="Index" class="btn btn-secondary me-2">Cancel</a>
-            <button type="submit" class="btn btn-success px-5 shadow">Save POI</button>
+        <div class="mt-4 d-flex justify-content-end gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success px-4">Save POI</button>
         </div>
     </form>
 </div>
+
+<style>
+    .poi-image-frame {
+        aspect-ratio: 4 / 3;
+        width: 100%;
+        background: linear-gradient(180deg, #fff7ed 0%, #fff 100%);
+        border: 1px dashed #fdba74;
+        border-radius: 20px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .poi-image-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 14px;
+        background: #fff;
+    }
+</style>
+
+<script>
+    document.getElementById('imageFile')?.addEventListener('change', function (event) {
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const preview = document.getElementById('poiPreviewImage');
+            if (preview) {
+                preview.src = e.target?.result;
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+</script>

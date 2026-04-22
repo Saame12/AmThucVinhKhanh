@@ -63,6 +63,12 @@ public partial class SettingsPage : ContentPage
         BuyVipButton.Text = GetVipButtonText(session);
         BuyVipButton.IsEnabled = session is not null && !session.IsVip;
 
+        TravelerSectionTitleLabel.Text = GetTravelerSectionTitleText();
+        TravelerSectionSubtitleLabel.Text = GetTravelerSectionSubtitleText();
+        GuidCaptionLabel.Text = GetGuidCaptionText();
+        GuidValueLabel.Text = $"guid-{App.Auth.GuestId}";
+        GuidHintLabel.Text = GetGuidHintText();
+
         VersionTitleLabel.Text = LocalizationService.GetString("Version Info:");
         VersionValueLabel.Text = LocalizationService.GetString("VersionValue");
     }
@@ -271,4 +277,31 @@ public partial class SettingsPage : ContentPage
         _ => "VIP da duoc kich hoat cho tai khoan nay."
     };
 
+    private static string GetTravelerSectionTitleText() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "Traveler session",
+        "zh" => "\u6E38\u5BA2\u4F1A\u8BDD",
+        _ => "Phien khach du lich"
+    };
+
+    private static string GetTravelerSectionSubtitleText() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "Each active visitor is tracked with a temporary guid for load monitoring.",
+        "zh" => "\u6BCF\u4E2A\u6D3B\u52A8\u6E38\u5BA2\u90FD\u4F1A\u4F7F\u7528\u4E34\u65F6 guid \u8FDB\u884C\u8D1F\u8F7D\u7EDF\u8BA1\u3002",
+        _ => "Moi khach dang dung app se duoc gan guid tam de thong ke tai server."
+    };
+
+    private static string GetGuidCaptionText() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "Current guest guid",
+        "zh" => "\u5F53\u524D\u6E38\u5BA2 guid",
+        _ => "Guid hien tai"
+    };
+
+    private static string GetGuidHintText() => LocalizationService.CurrentLanguage switch
+    {
+        "en" => "This guid is refreshed online automatically while the app is being used.",
+        "zh" => "\u5F53\u60A8\u4F7F\u7528 App \u65F6\uff0c\u7CFB\u7EDF\u4F1A\u81EA\u52A8\u66F4\u65B0\u6B64 guid \u7684\u5728\u7EBF\u72B6\u6001\u3002",
+        _ => "Guid nay duoc cap nhat online tu dong trong luc ban su dung app."
+    };
 }

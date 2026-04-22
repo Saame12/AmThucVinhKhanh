@@ -21,6 +21,11 @@
     <div class="alert alert-success">@successMessage</div>
 }
 
+@if (Model.IsDemoData)
+{
+    <div class="alert alert-warning">Dashboard dang o che do demo. @Model.DemoMessage</div>
+}
+
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
@@ -87,7 +92,7 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="text-muted small">Tong giao dich</div>
@@ -95,11 +100,19 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="text-muted small">Da thanh toan</div>
                 <div class="fs-3 fw-bold text-success">@Model.PaidTransactions</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Mo khoa audio</div>
+                <div class="fs-3 fw-bold text-primary">@Model.UnlockedPurchases</div>
             </div>
         </div>
     </div>
@@ -202,6 +215,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>Transaction</th>
+                        <th>Nguoi mua</th>
                         <th>POI</th>
                         <th>Provider</th>
                         <th>Amount</th>
@@ -214,7 +228,7 @@
                 <tbody>
                     @if (Model.Transactions.Count == 0)
                     {
-                        <tr><td colspan="8" class="text-center text-muted">Chua co giao dich QR.</td></tr>
+                        <tr><td colspan="9" class="text-center text-muted">Chua co giao dich QR.</td></tr>
                     }
                     else
                     {
@@ -224,6 +238,10 @@
                                 <td>
                                     <div class="fw-semibold">@item.TransactionCode</div>
                                     <div class="small text-muted">@item.CustomerLabel</div>
+                                </td>
+                                <td>
+                                    <div>@item.PurchaserDisplayName</div>
+                                    <div class="small text-muted">@(string.IsNullOrWhiteSpace(item.GuestId) ? $"user:{item.UserId}" : $"guest:{item.GuestId}")</div>
                                 </td>
                                 <td>@item.PoiName</td>
                                 <td>@item.Provider</td>

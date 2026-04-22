@@ -90,7 +90,7 @@ public partial class ScanQrPage : ContentPage
             GetManualQrPromptMessage(),
             accept: GetConfirmText(),
             cancel: LocalizationService.GetString("Cancel"),
-            placeholder: "VK-POI-0001 / vinhkhanhfood://poi/1",
+            placeholder: "VK-POI-0001 / VK-PAY-0001-0050000",
             maxLength: 200,
             keyboard: Keyboard.Url);
 
@@ -150,30 +150,30 @@ public partial class ScanQrPage : ContentPage
 
     private static string GetManualQrPromptMessage() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "Paste the POI QR link or enter the POI code to simulate a scan on the emulator.",
-        "zh" => "\u7C98\u8D34 POI QR \u94FE\u63A5\u6216\u8F93\u5165 POI \u4EE3\u7801\uff0C\u5728\u6A21\u62DF\u5668\u4E0A\u6A21\u62DF\u626B\u7801\u3002",
-        _ => "Dan lien ket QR hoac nhap ma POI de mo phong quet tren gia lap."
+        "en" => "Paste the POI/payment QR link or enter the code to simulate a scan on the emulator.",
+        "zh" => "\u7C98\u8D34 POI/\u652F\u4ED8 QR \u94FE\u63A5\u6216\u8F93\u5165\u4EE3\u7801\uff0C\u5728\u6A21\u62DF\u5668\u4E0A\u6A21\u62DF\u626B\u7801\u3002",
+        _ => "Dan lien ket QR POI/thanh toan hoac nhap ma de mo phong quet tren gia lap."
     };
 
     private static string GetConfirmText() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "Open POI",
-        "zh" => "\u6253\u5F00 POI",
-        _ => "Mo POI"
+        "en" => "Continue",
+        "zh" => "\u7EE7\u7EED",
+        _ => "Tiep tuc"
     };
 
     private static string GetOpeningPoiText() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "Opening POI and starting audio...",
-        "zh" => "\u6B63\u5728\u6253\u5F00 POI \u5E76\u64AD\u653E\u97F3\u9891...",
-        _ => "Dang mo POI va phat audio..."
+        "en" => "Processing QR...",
+        "zh" => "\u6B63\u5728\u5904\u7406 QR...",
+        _ => "Dang xu ly QR..."
     };
 
     private static string GetInvalidQrText() => LocalizationService.CurrentLanguage switch
     {
-        "en" => "Invalid POI QR",
-        "zh" => "POI QR \u65E0\u6548",
-        _ => "Ma QR POI khong hop le"
+        "en" => "Invalid QR",
+        "zh" => "QR \u65E0\u6548",
+        _ => "Ma QR khong hop le"
     };
 
     private static string GetPoiNotFoundText() => LocalizationService.CurrentLanguage switch

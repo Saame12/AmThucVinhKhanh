@@ -36,17 +36,18 @@
                             <td>
                                 @if (!string.IsNullOrEmpty(item.ImageUrl))
                                 {
-                                    var apiUrl = "http://localhost:5020/images/";
-                                    <img src="@(apiUrl + item.ImageUrl)"
-                                         width="60"
-                                         height="60"
-                                         style="object-fit:cover"
-                                         class="rounded shadow-sm"
-                                         onerror="this.src='/images/no-image.png'; this.onerror=null;" />
+                                    var imageUrl = item.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                        ? item.ImageUrl
+                                        : $"/images/{item.ImageUrl.TrimStart('/')}";
+                                    <div class="poi-thumb-frame">
+                                        <img src="@imageUrl"
+                                             class="poi-thumb-image"
+                                             onerror="this.src='https://placehold.co/240x180/F5F5F5/9CA3AF?text=POI'; this.onerror=null;" />
+                                    </div>
                                 }
                                 else
                                 {
-                                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
+                                    <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center poi-thumb-frame">
                                         <i class="bi bi-image"></i>
                                     </div>
                                 }
@@ -89,3 +90,26 @@
         </div>
     </div>
 </div>
+
+<style>
+    .poi-thumb-frame {
+        width: 84px;
+        height: 64px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #fff7ed 0%, #fff 100%);
+        border: 1px solid #fed7aa;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+    }
+
+    .poi-thumb-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 10px;
+        background: #fff;
+    }
+</style>

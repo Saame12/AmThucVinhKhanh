@@ -47,7 +47,7 @@ public partial class App : Application
 
     public static async Task<QrOpenResult> OpenQrAsync(string rawValue)
     {
-        if (!TryCreatePoiUri(rawValue, out var uri))
+        if (!TryCreateSupportedQrUri(rawValue, out var uri))
         {
             return QrOpenResult.Invalid;
         }
@@ -92,6 +92,34 @@ public partial class App : Application
 
     private async Task<QrOpenResult> HandleIncomingUriAsync(Uri uri)
     {
+        if (TryExtractPaymentInfo(uri, out var paymentPoiId, out var amount))
+        {
+            var paymentLocations = await new ApiService().GetFoodLocationsAsync();
+            if (paymentLocations.Count == 0)
+            {
+                return QrOpenResult.Unavailable;
+            }
+
+            var paymentPoi = paymentLocations.FirstOrDefault(item => item.Id == paymentPoiId);
+            if (paymentPoi is null)
+            {
+                return QrOpenResult.NotFound;
+            }
+
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                if (Shell.Current is null)
+                {
+                    return;
+                }
+
+                await Shell.Current.GoToAsync("//ExploreTab");
+                await Shell.Current.Navigation.PushAsync(new PaymentCheckoutPage(paymentPoi, amount));
+            });
+
+            return QrOpenResult.Success;
+        }
+
         if (!TryExtractPoiId(uri, out var poiId))
         {
             return QrOpenResult.Invalid;
@@ -169,7 +197,7 @@ public partial class App : Application
         return int.TryParse(uri.AbsolutePath.Trim('/'), out poiId);
     }
 
-    private static bool TryCreatePoiUri(string rawValue, out Uri uri)
+    private static bool TryCreateSupportedQrUri(string rawValue, out Uri uri)
     {
         uri = null!;
 
@@ -193,6 +221,18 @@ public partial class App : Application
             return true;
         }
 
+        if (normalized.StartsWith("VK-PAY-", StringComparison.OrdinalIgnoreCase))
+        {
+            var segments = normalized.Split('-', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length >= 4 &&
+                int.TryParse(segments[2], out var paymentPoiId) &&
+                decimal.TryParse(segments[3], out var paymentAmount))
+            {
+                uri = new Uri($"vinhkhanhpay://payment/poi/{paymentPoiId}?amount={paymentAmount}");
+                return true;
+            }
+        }
+
         if (int.TryParse(normalized, out var numericPoiId))
         {
             uri = new Uri($"vinhkhanhfood://poi/{numericPoiId}");
@@ -200,6 +240,46 @@ public partial class App : Application
         }
 
         return false;
+    }
+
+    private static bool TryExtractPaymentInfo(Uri uri, out int poiId, out decimal amount)
+    {
+        poiId = 0;
+        amount = 0;
+
+        if (!string.Equals(uri.Scheme, "vinhkhanhpay", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!string.Equals(uri.Host, "payment", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var segments = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length != 2 ||
+            !string.Equals(segments[0], "poi", StringComparison.OrdinalIgnoreCase) ||
+            !int.TryParse(segments[1], out poiId))
+        {
+            return false;
+        }
+
+        var query = uri.Query.TrimStart('?')
+            .Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Select(part => part.Split('=', 2))
+            .ToDictionary(
+                parts => Uri.UnescapeDataString(parts[0]),
+                parts => parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : string.Empty,
+                StringComparer.OrdinalIgnoreCase);
+
+        if (!query.TryGetValue("amount", out var amountRaw) ||
+            !decimal.TryParse(amountRaw, out amount))
+        {
+            amount = 50000m;
+        }
+
+        return true;
     }
 
     public enum QrOpenResult

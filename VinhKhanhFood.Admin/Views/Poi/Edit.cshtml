@@ -1,34 +1,205 @@
-﻿namespace VinhKhanhFood.Admin.Views.Poi
-{
-    public class Edit
-    {
 @model VinhKhanhFood.API.Models.FoodLocation
 
+@{
+    ViewData["Title"] = "Edit POI";
+    var currentImageUrl = !string.IsNullOrWhiteSpace(Model.ImageUrl)
+        ? (Model.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? Model.ImageUrl
+            : $"/images/{Model.ImageUrl.TrimStart('/')}")
+        : "https://placehold.co/960x720/F5F5F5/9CA3AF?text=POI+Image";
+    var hasAudioVi = !string.IsNullOrWhiteSpace(Model.AudioUrl);
+    var hasAudioEn = !string.IsNullOrWhiteSpace(Model.AudioUrl_EN);
+    var hasAudioZh = !string.IsNullOrWhiteSpace(Model.AudioUrl_ZH);
+}
+
 <div class="container mt-4">
-    <h2>✏️ Edit POI</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Edit POI</h2>
+            <p class="text-muted mb-0">Cap nhat noi dung va hinh anh theo ti le an toan de hien thi tot tren moi thiet bi.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to list</a>
+    </div>
 
     <form asp-action="Edit" enctype="multipart/form-data" method="post">
-        <input type="hidden" asp-for="Id" />
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="OwnerId" type="hidden" />
+        <input asp-for="Status" type="hidden" />
 
-        <div class="mb-3">
-            <label>Tên (VN)</label>
-            <input asp-for="Name" class="form-control" />
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h5 class="mb-3 text-primary">Basic Information</h5>
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label">Location Name (Vietnamese)</label>
+                            <input asp-for="Name" class="form-control" required />
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Name_EN" class="form-label">Location Name (English)</label>
+                                <input asp-for="Name_EN" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Name_ZH" class="form-label">Location Name (Chinese)</label>
+                                <input asp-for="Name_ZH" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label asp-for="Latitude" class="form-label">Latitude</label>
+                                <input asp-for="Latitude" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Longitude" class="form-label">Longitude</label>
+                                <input asp-for="Longitude" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label asp-for="Description" class="form-label">Description (Vietnamese)</label>
+                            <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label asp-for="Description_EN" class="form-label">Description (English)</label>
+                                <textarea asp-for="Description_EN" class="form-control" rows="4"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Description_ZH" class="form-label">Description (Chinese)</label>
+                                <textarea asp-for="Description_ZH" class="form-control" rows="4"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="mb-3 text-success">Image Display Preview</h5>
+
+                        <div class="poi-image-frame mb-3">
+                            <img id="poiPreviewImage"
+                                 src="@currentImageUrl"
+                                 alt="POI preview"
+                                 class="poi-image-preview" />
+                        </div>
+
+                        <label class="form-label">Replace image</label>
+                        <input type="file"
+                               name="imageFile"
+                               id="imageFile"
+                               class="form-control"
+                               accept="image/*" />
+
+                        <div class="alert alert-light border mt-3 mb-0">
+                            <div class="fw-semibold mb-2">Recommended image rule</div>
+                            <ul class="small text-muted mb-0 ps-3">
+                                <li>Use 4:3 or 1:1 images to keep the full subject visible.</li>
+                                <li>Keep important text and faces away from the outer edges.</li>
+                                <li>The app now displays images in fit mode to reduce cropping on small screens.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h5 class="mb-3 text-warning">Professional Audio</h5>
+                        <p class="text-muted mb-3 small">Ban co the giu file audio VIP cu, thay bang file moi, hoac bo han file dang co.</p>
+
+                        <div class="border rounded-4 p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="fw-semibold">Vietnamese VIP audio</div>
+                                <span class="badge @(hasAudioVi ? "bg-success" : "bg-secondary")">@(hasAudioVi ? "Existing file" : "No file")</span>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input type="hidden" name="keepAudioVi" value="false" />
+                                <input class="form-check-input" type="checkbox" id="keepAudioVi" name="keepAudioVi" value="true" @(hasAudioVi ? "checked" : "") />
+                                <label class="form-check-label" for="keepAudioVi">Keep current audio</label>
+                            </div>
+                            <input type="file" name="audioViFile" class="form-control" accept="audio/*" />
+                        </div>
+
+                        <div class="border rounded-4 p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="fw-semibold">English VIP audio</div>
+                                <span class="badge @(hasAudioEn ? "bg-success" : "bg-secondary")">@(hasAudioEn ? "Existing file" : "No file")</span>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input type="hidden" name="keepAudioEn" value="false" />
+                                <input class="form-check-input" type="checkbox" id="keepAudioEn" name="keepAudioEn" value="true" @(hasAudioEn ? "checked" : "") />
+                                <label class="form-check-label" for="keepAudioEn">Keep current audio</label>
+                            </div>
+                            <input type="file" name="audioEnFile" class="form-control" accept="audio/*" />
+                        </div>
+
+                        <div class="border rounded-4 p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="fw-semibold">Chinese VIP audio</div>
+                                <span class="badge @(hasAudioZh ? "bg-success" : "bg-secondary")">@(hasAudioZh ? "Existing file" : "No file")</span>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input type="hidden" name="keepAudioZh" value="false" />
+                                <input class="form-check-input" type="checkbox" id="keepAudioZh" name="keepAudioZh" value="true" @(hasAudioZh ? "checked" : "") />
+                                <label class="form-check-label" for="keepAudioZh">Keep current audio</label>
+                            </div>
+                            <input type="file" name="audioZhFile" class="form-control" accept="audio/*" />
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label>Mô tả</label>
-            <textarea asp-for="Description" class="form-control"></textarea>
+        <div class="mt-4 d-flex justify-content-end gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success px-4">Save changes</button>
         </div>
-
-        <!-- 🔥 NEW: Image update -->
-        <div class="mb-3">
-            <label>Đổi ảnh</label>
-            <input type="file" name="imageFile" class="form-control" />
-        </div>
-
-        <button type="submit" class="btn btn-success">Save</button>
-        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
+
+<style>
+    .poi-image-frame {
+        aspect-ratio: 4 / 3;
+        width: 100%;
+        background: linear-gradient(180deg, #fff7ed 0%, #fff 100%);
+        border: 1px dashed #fdba74;
+        border-radius: 20px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
     }
-}
+
+    .poi-image-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 14px;
+        background: #fff;
+    }
+</style>
+
+<script>
+    document.getElementById('imageFile')?.addEventListener('change', function (event) {
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const preview = document.getElementById('poiPreviewImage');
+            if (preview) {
+                preview.src = e.target?.result;
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+</script>

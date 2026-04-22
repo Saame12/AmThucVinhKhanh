@@ -31,10 +31,12 @@
 
             <Grid RowDefinitions="Auto,Auto">
                 <Border StrokeThickness="0"
-                        StrokeShape="RoundRectangle 28">
+                        BackgroundColor="#FFF7ED"
+                        StrokeShape="RoundRectangle 28"
+                        Padding="10">
                     <Image x:Name="HeroImage"
                            HeightRequest="280"
-                           Aspect="AspectFill" />
+                           Aspect="AspectFit" />
                 </Border>
 
                 <Border Margin="16,-34,16,0"

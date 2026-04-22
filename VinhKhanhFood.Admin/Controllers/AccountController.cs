@@ -30,7 +30,7 @@ public class AccountController : Controller
         }
         catch (HttpRequestException)
         {
-            ViewBag.Error = "API chua khoi dong hoac khong ket noi duoc toi localhost:5020.";
+            ViewBag.Error = "API chua khoi dong hoac khong ket noi duoc toi dia chi da cau hinh.";
             return View(loginInfo);
         }
 

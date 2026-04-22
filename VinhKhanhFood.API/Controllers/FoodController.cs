@@ -20,15 +20,7 @@ namespace VinhKhanhFood.API.Controllers
         public async Task<ActionResult<IEnumerable<FoodLocation>>> GetLocations()
         {
             var locations = await _context.FoodLocations.ToListAsync();
-            var baseUrl = "http://10.0.2.2:5020";
-
-            foreach (var loc in locations)
-            {
-                if (!string.IsNullOrEmpty(loc.ImageUrl) && !loc.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                {
-                    loc.ImageUrl = $"{baseUrl}/images/{loc.ImageUrl}";
-                }
-            }
+            ApplyAbsoluteAssetUrls(locations);
 
             return Ok(locations);
         }
@@ -121,6 +113,7 @@ namespace VinhKhanhFood.API.Controllers
                 return NotFound();
             }
 
+            ApplyAbsoluteAssetUrl(food);
             return Ok(food);
         }
 
@@ -205,6 +198,23 @@ namespace VinhKhanhFood.API.Controllers
             });
 
             await _context.SaveChangesAsync();
+        }
+
+        private void ApplyAbsoluteAssetUrls(IEnumerable<FoodLocation> locations)
+        {
+            foreach (var location in locations)
+            {
+                ApplyAbsoluteAssetUrl(location);
+            }
+        }
+
+        private void ApplyAbsoluteAssetUrl(FoodLocation location)
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            if (!string.IsNullOrWhiteSpace(location.ImageUrl) && !location.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                location.ImageUrl = $"{baseUrl}/images/{location.ImageUrl.TrimStart('/')}";
+            }
         }
 
         private static string BuildGuestDisplayName(string? remoteIp, string? guestId)
