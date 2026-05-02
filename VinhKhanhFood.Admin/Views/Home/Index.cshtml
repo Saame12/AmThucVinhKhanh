@@ -1,8 +1,92 @@
 ﻿@{
     ViewData["Title"] = VinhKhanhFood.Admin.Services.LocalizationService.GetString("Welcome to Vinh Khanh Food Admin");
+    var publicWebUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/public";
+    var qrImageUrl = $"https://quickchart.io/qr?size=320&text={Uri.EscapeDataString(publicWebUrl)}";
 }
 
-<div class="text-center">
-    <h1 class="display-4"><loc key="Welcome to Vinh Khanh Food Admin" /></h1>
-    <p><loc key="Manage your food locations and content" /></p>
+<div class="container-fluid pt-4">
+    <div class="text-center mb-4">
+        <h1 class="display-4"><loc key="Welcome to Vinh Khanh Food Admin" /></h1>
+        <p class="text-muted"><loc key="Manage your food locations and content" /></p>
+    </div>
+
+    <div class="row g-4 mt-4">
+        <!-- QR Public Web Card -->
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">🌐 QR Public Web</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="alert alert-info">
+                        <strong>QR duy nhất</strong> cho tất cả khách quét từ bên ngoài (không dùng app)
+                    </div>
+
+                    <img src="@qrImageUrl"
+                         alt="QR Public Web"
+                         class="img-fluid rounded shadow-sm mb-3"
+                         style="max-width: 320px;" />
+
+                    <div class="mb-3">
+                        <div class="badge bg-success fs-6 mb-2">VK-PUBLIC-WEB</div>
+                        <div class="small text-muted">Quét QR này để vào trang web công khai</div>
+                    </div>
+
+                    <div class="text-start bg-light p-3 rounded mb-3">
+                        <div class="small text-muted mb-1">URL công khai:</div>
+                        <code class="d-block">@publicWebUrl</code>
+                    </div>
+
+                    <a href="@publicWebUrl"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="btn btn-primary btn-lg">
+                        <i class="bi bi-box-arrow-up-right"></i> Mở trang công khai
+                    </a>
+                </div>
+                <div class="card-footer bg-light">
+                    <h6 class="mb-2">📋 Luồng hoạt động:</h6>
+                    <ol class="small mb-0 text-start">
+                        <li>Khách quét QR từ camera điện thoại/app bên thứ 3</li>
+                        <li>Mở trang web hiển thị danh sách tất cả POIs</li>
+                        <li>Chọn POI muốn xem → Trang bị làm mờ với QR Payment</li>
+                        <li>Thanh toán 50,000 VND → Mở khóa nội dung đầy đủ</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 text-primary mb-3">📍</div>
+                    <h5>Manage POIs</h5>
+                    <p class="text-muted">Quản lý điểm POI và Audio QR</p>
+                    <a asp-controller="Poi" asp-action="Index" class="btn btn-outline-primary">Vào quản lý</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 text-success mb-3">👥</div>
+                    <h5>Users</h5>
+                    <p class="text-muted">Quản lý người dùng và quyền</p>
+                    <a asp-controller="Account" asp-action="Users" class="btn btn-outline-success">Xem users</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 text-info mb-3">📊</div>
+                    <h5>Usage Dashboard</h5>
+                    <p class="text-muted">Thống kê sử dụng hệ thống</p>
+                    <a asp-controller="Usage" asp-action="Index" class="btn btn-outline-info">Xem thống kê</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

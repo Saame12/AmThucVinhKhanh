@@ -16,6 +16,7 @@ public partial class App : Application
         InitializeComponent();
         LocalizationService.Initialize();
         LocalizationService.LanguageChanged += OnLanguageChanged;
+        AudioGuide.StateChanged += OnAudioGuideStateChanged;
         MainPage = new AppShell();
 
         if (_pendingUri is not null)
@@ -80,14 +81,27 @@ public partial class App : Application
 
     private async void OnWindowStopped(object? sender, EventArgs e)
     {
+        Auth.StopAudioHeartbeat();
         Auth.StopPresenceHeartbeat();
         await Auth.SetPresenceAsync(false);
     }
 
     private async void OnWindowDestroying(object? sender, EventArgs e)
     {
+        Auth.StopAudioHeartbeat();
         Auth.StopPresenceHeartbeat();
         await Auth.SetPresenceAsync(false);
+    }
+
+    private void OnAudioGuideStateChanged(object? sender, AudioGuideStateChangedEventArgs e)
+    {
+        if (e.State == AudioGuidePlaybackState.Playing && e.CurrentPoi is not null)
+        {
+            Auth.StartAudioHeartbeat(e.CurrentPoi);
+            return;
+        }
+
+        Auth.StopAudioHeartbeat();
     }
 
     private async Task<QrOpenResult> HandleIncomingUriAsync(Uri uri)
@@ -114,7 +128,7 @@ public partial class App : Application
                 }
 
                 await Shell.Current.GoToAsync("//ExploreTab");
-                await Shell.Current.Navigation.PushAsync(new PaymentCheckoutPage(paymentPoi, amount));
+                await Shell.Current.Navigation.PushAsync(new DetailPage(paymentPoi));
             });
 
             return QrOpenResult.Success;

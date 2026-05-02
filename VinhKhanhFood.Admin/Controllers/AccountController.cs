@@ -52,7 +52,7 @@ public class AccountController : Controller
             HttpContext.Session.SetInt32("UserId", user.Id);
 
             await UpdatePresenceAsync(user.Id, true);
-            return RedirectToAction("Index", "Poi");
+            return RedirectToAction("Index", "Home");
         }
 
         if (loginInfo.Username == "TroLyVinhKhanh" && loginInfo.Password == "1")
@@ -62,7 +62,7 @@ public class AccountController : Controller
             HttpContext.Session.SetInt32("UserId", 999);
             await UpdatePresenceAsync(999, true);
 
-            return RedirectToAction("Index", "Poi");
+            return RedirectToAction("Index", "Home");
         }
 
         ViewBag.Error = "Tai khoan hoac mat khau khong dung.";

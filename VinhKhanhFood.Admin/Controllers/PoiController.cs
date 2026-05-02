@@ -55,7 +55,7 @@ namespace VinhKhanhFood.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(ApiFoodLocation model, IFormFile imageFile, IFormFile audioViFile, IFormFile audioEnFile, IFormFile audioZhFile)
+        public async Task<IActionResult> Create(ApiFoodLocation model, IFormFile imageFile)
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
             {
@@ -65,22 +65,6 @@ namespace VinhKhanhFood.Admin.Controllers
             if (imageFile != null)
             {
                 model.ImageUrl = await SaveFile(imageFile, "images");
-            }
-
-            // Uploaded audio files are treated as professional audio.
-            if (audioViFile != null)
-            {
-                model.AudioUrl = await SaveFile(audioViFile, "audio");
-            }
-
-            if (audioEnFile != null)
-            {
-                model.AudioUrl_EN = await SaveFile(audioEnFile, "audio");
-            }
-
-            if (audioZhFile != null)
-            {
-                model.AudioUrl_ZH = await SaveFile(audioZhFile, "audio");
             }
 
             model.Status = "Pending";
@@ -121,13 +105,7 @@ namespace VinhKhanhFood.Admin.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(
             ApiFoodLocation model,
-            IFormFile imageFile,
-            IFormFile audioViFile,
-            IFormFile audioEnFile,
-            IFormFile audioZhFile,
-            bool keepAudioVi = true,
-            bool keepAudioEn = true,
-            bool keepAudioZh = true)
+            IFormFile imageFile)
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
             {
@@ -155,9 +133,6 @@ namespace VinhKhanhFood.Admin.Controllers
             model.Name_ZH = string.IsNullOrWhiteSpace(model.Name_ZH) ? existing.Name_ZH : model.Name_ZH;
             model.Description_EN = string.IsNullOrWhiteSpace(model.Description_EN) ? existing.Description_EN : model.Description_EN;
             model.Description_ZH = string.IsNullOrWhiteSpace(model.Description_ZH) ? existing.Description_ZH : model.Description_ZH;
-            model.AudioUrl = await ResolveAudioValue(existing.AudioUrl, audioViFile, keepAudioVi);
-            model.AudioUrl_EN = await ResolveAudioValue(existing.AudioUrl_EN, audioEnFile, keepAudioEn);
-            model.AudioUrl_ZH = await ResolveAudioValue(existing.AudioUrl_ZH, audioZhFile, keepAudioZh);
             if (Math.Abs(model.Latitude) < double.Epsilon)
             {
                 model.Latitude = existing.Latitude;
@@ -175,16 +150,6 @@ namespace VinhKhanhFood.Admin.Controllers
             else
             {
                 model.ImageUrl = existing.ImageUrl;
-            }
-
-            async Task<string?> ResolveAudioValue(string? existingValue, IFormFile? newFile, bool keepExisting)
-            {
-                if (newFile != null)
-                {
-                    return await SaveFile(newFile, "audio");
-                }
-
-                return keepExisting ? existingValue : null;
             }
 
             var response = await _http.PutAsJsonAsync($"Food/{model.Id}", model);
@@ -235,46 +200,6 @@ namespace VinhKhanhFood.Admin.Controllers
                 }
 
                 return View(poi);
-            }
-            catch
-            {
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-        public async Task<IActionResult> PaymentQr(int id, decimal? amount)
-        {
-            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserName")))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            try
-            {
-                var poi = await _http.GetFromJsonAsync<ApiFoodLocation>($"Food/{id}");
-                if (poi is null)
-                {
-                    return RedirectToAction(nameof(Index));
-                }
-
-                const decimal fixedAmount = 10000m;
-                var configuredPublicBaseUrl = _configuration["PublicSiteSettings:BaseUrl"]?.Trim().TrimEnd('/');
-                var useLocalDemoUrl = string.Equals(_configuration["DemoSettings:ForceLocalPaymentPage"], "true", StringComparison.OrdinalIgnoreCase);
-                var localPaymentUrl = Url.Action("Poi", "Payment", new { id = poi.Id }, Request.Scheme) ?? $"{Request.Scheme}://{Request.Host}/Payment/Poi/{poi.Id}";
-                var publicPaymentUrl = useLocalDemoUrl || string.IsNullOrWhiteSpace(configuredPublicBaseUrl)
-                    ? localPaymentUrl
-                    : $"{configuredPublicBaseUrl}/poi.php?id={poi.Id}";
-                var model = new PoiPaymentQrViewModel
-                {
-                    Poi = poi,
-                    FixedAmount = fixedAmount,
-                    PublicPaymentUrl = publicPaymentUrl,
-                    IsLocalDemoUrl = useLocalDemoUrl || string.IsNullOrWhiteSpace(configuredPublicBaseUrl),
-                    QrImageUrl = $"https://quickchart.io/qr?size=320&text={Uri.EscapeDataString(publicPaymentUrl)}",
-                    QrCodeLabel = $"VK-PAY-{poi.Id:D4}-{fixedAmount:0000000}"
-                };
-
-                return View(model);
             }
             catch
             {

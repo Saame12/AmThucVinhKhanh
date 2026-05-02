@@ -104,44 +104,6 @@
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
             </Border>
-
-            <Border x:Name="ProfessionalAudioCard"
-                    StrokeThickness="0"
-                    BackgroundColor="#FFF7ED"
-                    StrokeShape="RoundRectangle 24"
-                    Padding="18">
-                <VerticalStackLayout Spacing="14">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <VerticalStackLayout Spacing="4">
-                            <Label x:Name="ProfessionalAudioTitleLabel"
-                                   FontSize="20"
-                                   FontAttributes="Bold"
-                                   TextColor="{StaticResource TextPrimary}" />
-                            <Label x:Name="ProfessionalAudioStatusLabel"
-                                   FontSize="13"
-                                   TextColor="{StaticResource TextSecondary}" />
-                        </VerticalStackLayout>
-
-                        <Border BackgroundColor="#FEF3C7"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 14"
-                                Padding="10,8"
-                                VerticalOptions="Start">
-                            <Label x:Name="VipBadgeLabel"
-                                   FontSize="11"
-                                   FontAttributes="Bold"
-                                   TextColor="#B45309" />
-                        </Border>
-                    </Grid>
-
-                    <Button x:Name="PlayProfessionalAudioButton"
-                            TextColor="White"
-                            BackgroundColor="#F59E0B"
-                            CornerRadius="16"
-                            HeightRequest="48"
-                            Clicked="OnPlayProfessionalAudioClicked" />
-                </VerticalStackLayout>
-            </Border>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

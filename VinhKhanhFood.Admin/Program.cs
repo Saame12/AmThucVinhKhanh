@@ -1,6 +1,14 @@
+using Microsoft.EntityFrameworkCore;
+using VinhKhanhFood.API.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5020/api/";
+
+// Add DbContext for direct database access
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=../VinhKhanhFood.API/VinhKhanhFood.db";
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(connectionString));
 
 builder.Services.AddHttpClient("MyAPI", client =>
 {

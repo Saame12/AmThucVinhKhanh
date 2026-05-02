@@ -88,6 +88,95 @@
             </div>
         </div>
     </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Visitor tai POI</div>
+                <div class="fs-3 fw-bold">@Model.VisitorsAtPoiNow</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Visitor giua 2 POI</div>
+                <div class="fs-3 fw-bold">@Model.VisitorsBetweenPoisNow</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Nguoi dang nghe</div>
+                <div class="fs-3 fw-bold">@Model.ActiveAudioListenersNow</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Visitor dang o tung POI</h5>
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>POI</th>
+                            <th>Visitor online</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.VisitorPresence.Count == 0)
+                    {
+                        <tr><td colspan="2" class="text-center text-muted">Chua co visitor nao dang o trong vung POI.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.VisitorPresence)
+                        {
+                            <tr>
+                                <td>@item.PoiName (@item.PoiId)</td>
+                                <td>@item.VisitorCount</td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Visitor dang dung giua 2 POI</h5>
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tuyen POI</th>
+                            <th>Visitor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.BetweenPoiVisitors.Count == 0)
+                    {
+                        <tr><td colspan="2" class="text-center text-muted">Chua co visitor nao o trang thai BETWEEN_POIS.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.BetweenPoiVisitors)
+                        {
+                            <tr>
+                                <td>@item.RouteLabel</td>
+                                <td>@item.VisitorCount</td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row g-3 mb-4">
@@ -126,6 +215,51 @@
                 <div class="small text-warning">@((Model.LeastPlayedPoi?.VisitCount).GetValueOrDefault()) luot</div>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Hang doi nghe audio theo POI</h5>
+        @if (Model.LiveAudioQueues.Count == 0)
+        {
+            <div class="text-muted">Chua co visitor nao dang nghe audio trong 30 giay gan nhat.</div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var queue in Model.LiveAudioQueues)
+                {
+                    <div class="col-lg-6">
+                        <div class="border rounded-4 p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="fw-bold">@queue.PoiName (@queue.PoiId)</div>
+                                <span class="badge bg-primary">@queue.ListenerCount nguoi nghe</span>
+                            </div>
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Queue</th>
+                                        <th>Visitor</th>
+                                        <th>Heartbeat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var listener in queue.Listeners)
+                                {
+                                    <tr>
+                                        <td>@listener.QueuePosition</td>
+                                        <td>@listener.VisitorName</td>
+                                        <td>@(listener.LastHeartbeatUtc?.ToLocalTime().ToString("dd/MM HH:mm:ss") ?? "-")</td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 </div>
 

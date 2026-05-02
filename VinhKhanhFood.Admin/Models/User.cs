@@ -12,5 +12,15 @@
         public string OnlineStatus { get; set; } = "Offline";
         public bool IsVirtual { get; set; }
         public DateTime? LastSeenUtc { get; set; }
+        public double? LastLatitude { get; set; }
+        public double? LastLongitude { get; set; }
+        public int? CurrentPoiId { get; set; }
+        public string? CurrentPoiName { get; set; }
+        public int? SecondaryPoiId { get; set; }
+        public string? SecondaryPoiName { get; set; }
+        public string? LocationZoneStatus { get; set; }
+        public DateTime? LastAudioHeartbeatUtc { get; set; }
+        public int? CurrentAudioPoiId { get; set; }
+        public string? CurrentAudioPoiName { get; set; }
     }
 }

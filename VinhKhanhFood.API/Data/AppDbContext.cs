@@ -11,7 +11,6 @@ namespace VinhKhanhFood.API.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<UsageHistory> UsageHistories { get; set; }
-        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
-        public DbSet<PoiAudioUnlock> PoiAudioUnlocks { get; set; }
+        public DbSet<Subscription> Subscriptions { get; set; }
     }
 }

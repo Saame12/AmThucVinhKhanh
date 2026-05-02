@@ -6,6 +6,7 @@ namespace VinhKhanhFood.Admin.Controllers;
 
 public class UsageController : Controller
 {
+    private static readonly TimeSpan LiveAudioWindow = TimeSpan.FromSeconds(30);
     private readonly HttpClient _http;
 
     public UsageController(IHttpClientFactory httpClientFactory)
@@ -89,6 +90,56 @@ public class UsageController : Controller
         var viewRankings = BuildPoiRanking(viewHistory);
         var audioRankings = BuildPoiRanking(audioHistory);
         var heatmapPoints = BuildHeatmapPoints(audioRankings, pois);
+        var activePoiVisitors = deviceUsers
+            .Where(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
+            .Where(user => string.Equals(user.LocationZoneStatus, "AT_POI", StringComparison.OrdinalIgnoreCase))
+            .Where(user => user.CurrentPoiId.HasValue && !string.IsNullOrWhiteSpace(user.CurrentPoiName))
+            .GroupBy(user => new { PoiId = user.CurrentPoiId!.Value, PoiName = user.CurrentPoiName! })
+            .Select(group => new VisitorPoiPresenceStat
+            {
+                PoiId = group.Key.PoiId,
+                PoiName = group.Key.PoiName,
+                VisitorCount = group.Count()
+            })
+            .OrderByDescending(item => item.VisitorCount)
+            .ThenBy(item => item.PoiName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var betweenPoiVisitors = deviceUsers
+            .Where(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
+            .Where(user => string.Equals(user.LocationZoneStatus, "BETWEEN_POIS", StringComparison.OrdinalIgnoreCase))
+            .Where(user => !string.IsNullOrWhiteSpace(user.CurrentPoiName) && !string.IsNullOrWhiteSpace(user.SecondaryPoiName))
+            .GroupBy(user => $"{user.CurrentPoiName} ↔ {user.SecondaryPoiName}")
+            .Select(group => new VisitorBetweenPoiStat
+            {
+                RouteLabel = group.Key,
+                VisitorCount = group.Count()
+            })
+            .OrderByDescending(item => item.VisitorCount)
+            .ThenBy(item => item.RouteLabel, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var liveAudioQueues = deviceUsers
+            .Where(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
+            .Where(IsLiveAudioActive)
+            .Where(user => user.CurrentAudioPoiId.HasValue && !string.IsNullOrWhiteSpace(user.CurrentAudioPoiName))
+            .GroupBy(user => new { PoiId = user.CurrentAudioPoiId!.Value, PoiName = user.CurrentAudioPoiName! })
+            .Select(group => new PoiLiveAudioQueue
+            {
+                PoiId = group.Key.PoiId,
+                PoiName = group.Key.PoiName,
+                ListenerCount = group.Count(),
+                Listeners = group
+                    .OrderByDescending(user => user.LastAudioHeartbeatUtc)
+                    .Select((user, index) => new PoiLiveAudioQueueItem
+                    {
+                        QueuePosition = index + 1,
+                        VisitorName = string.IsNullOrWhiteSpace(user.FullName) ? user.Username : user.FullName,
+                        LastHeartbeatUtc = user.LastAudioHeartbeatUtc
+                    })
+                    .ToList()
+            })
+            .OrderByDescending(item => item.ListenerCount)
+            .ThenBy(item => item.PoiName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         return new UsageDashboardViewModel
         {
@@ -100,6 +151,9 @@ public class UsageController : Controller
             ActiveDevicesNow = deviceUsers.Count(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase)),
             ActiveDevicesLast24Hours = deviceUsers.Count(user => user.LastSeenUtc.HasValue && nowUtc - user.LastSeenUtc.Value <= TimeSpan.FromHours(24)),
             ActiveDevicesThisMonth = deviceUsers.Count(user => user.LastSeenUtc.HasValue && user.LastSeenUtc.Value.Year == nowUtc.Year && user.LastSeenUtc.Value.Month == nowUtc.Month),
+            VisitorsAtPoiNow = activePoiVisitors.Sum(item => item.VisitorCount),
+            VisitorsBetweenPoisNow = betweenPoiVisitors.Sum(item => item.VisitorCount),
+            ActiveAudioListenersNow = liveAudioQueues.Sum(item => item.ListenerCount),
             MostVisitedPoi = viewRankings.FirstOrDefault(),
             LeastVisitedPoi = viewRankings.OrderBy(item => item.VisitCount).ThenBy(item => item.PoiName, StringComparer.OrdinalIgnoreCase).FirstOrDefault(),
             MostPlayedPoi = audioRankings.FirstOrDefault(),
@@ -107,6 +161,9 @@ public class UsageController : Controller
             ViewRankings = viewRankings,
             AudioRankings = audioRankings,
             HeatmapPoints = heatmapPoints,
+            VisitorPresence = activePoiVisitors,
+            BetweenPoiVisitors = betweenPoiVisitors,
+            LiveAudioQueues = liveAudioQueues,
             HistoryItems = travelerHistory.Take(100).ToList()
         };
     }
@@ -152,6 +209,10 @@ public class UsageController : Controller
     private static bool IsTravelerDevice(User user) =>
         !string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase) &&
         !string.Equals(user.Role, "Owner", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsLiveAudioActive(User user) =>
+        user.LastAudioHeartbeatUtc.HasValue &&
+        DateTime.UtcNow - user.LastAudioHeartbeatUtc.Value <= LiveAudioWindow;
 
     private static string NormalizePeriod(string? period) => period?.Trim().ToLowerInvariant() switch
     {

@@ -123,6 +123,7 @@ public sealed class MapViewModel
 
             if (location is not null)
             {
+                await App.Auth.UpdateVisitorLocationAsync(location.Latitude, location.Longitude, cancellationToken);
                 await CheckGeofenceAsync(location, cancellationToken);
             }
         }

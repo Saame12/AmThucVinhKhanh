@@ -7,9 +7,6 @@
             ? Model.ImageUrl
             : $"/images/{Model.ImageUrl.TrimStart('/')}")
         : "https://placehold.co/960x720/F5F5F5/9CA3AF?text=POI+Image";
-    var hasAudioVi = !string.IsNullOrWhiteSpace(Model.AudioUrl);
-    var hasAudioEn = !string.IsNullOrWhiteSpace(Model.AudioUrl_EN);
-    var hasAudioZh = !string.IsNullOrWhiteSpace(Model.AudioUrl_ZH);
 }
 
 <div class="container mt-4">
@@ -104,52 +101,6 @@
                                 <li>Keep important text and faces away from the outer edges.</li>
                                 <li>The app now displays images in fit mode to reduce cropping on small screens.</li>
                             </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card shadow-sm border-0">
-                    <div class="card-body p-4">
-                        <h5 class="mb-3 text-warning">Professional Audio</h5>
-                        <p class="text-muted mb-3 small">Ban co the giu file audio VIP cu, thay bang file moi, hoac bo han file dang co.</p>
-
-                        <div class="border rounded-4 p-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="fw-semibold">Vietnamese VIP audio</div>
-                                <span class="badge @(hasAudioVi ? "bg-success" : "bg-secondary")">@(hasAudioVi ? "Existing file" : "No file")</span>
-                            </div>
-                            <div class="form-check form-switch mb-2">
-                                <input type="hidden" name="keepAudioVi" value="false" />
-                                <input class="form-check-input" type="checkbox" id="keepAudioVi" name="keepAudioVi" value="true" @(hasAudioVi ? "checked" : "") />
-                                <label class="form-check-label" for="keepAudioVi">Keep current audio</label>
-                            </div>
-                            <input type="file" name="audioViFile" class="form-control" accept="audio/*" />
-                        </div>
-
-                        <div class="border rounded-4 p-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="fw-semibold">English VIP audio</div>
-                                <span class="badge @(hasAudioEn ? "bg-success" : "bg-secondary")">@(hasAudioEn ? "Existing file" : "No file")</span>
-                            </div>
-                            <div class="form-check form-switch mb-2">
-                                <input type="hidden" name="keepAudioEn" value="false" />
-                                <input class="form-check-input" type="checkbox" id="keepAudioEn" name="keepAudioEn" value="true" @(hasAudioEn ? "checked" : "") />
-                                <label class="form-check-label" for="keepAudioEn">Keep current audio</label>
-                            </div>
-                            <input type="file" name="audioEnFile" class="form-control" accept="audio/*" />
-                        </div>
-
-                        <div class="border rounded-4 p-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="fw-semibold">Chinese VIP audio</div>
-                                <span class="badge @(hasAudioZh ? "bg-success" : "bg-secondary")">@(hasAudioZh ? "Existing file" : "No file")</span>
-                            </div>
-                            <div class="form-check form-switch mb-2">
-                                <input type="hidden" name="keepAudioZh" value="false" />
-                                <input class="form-check-input" type="checkbox" id="keepAudioZh" name="keepAudioZh" value="true" @(hasAudioZh ? "checked" : "") />
-                                <label class="form-check-label" for="keepAudioZh">Keep current audio</label>
-                            </div>
-                            <input type="file" name="audioZhFile" class="form-control" accept="audio/*" />
                         </div>
                     </div>
                 </div>

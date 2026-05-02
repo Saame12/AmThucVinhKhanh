@@ -62,16 +62,11 @@
                                 {
                                     <span class="badge bg-success" title="Audio mặc định từ mô tả">Default</span>
                                 }
-                                @if (item.HasProfessionalAudio)
-                                {
-                                    <span class="badge bg-warning text-dark" title="Audio chuyên nghiệp owner upload">Pro</span>
-                                }
                             </td>
                             <td>
                                 <div class="small fw-semibold">@item.QrCodeLabel</div>
                                 <div class="d-grid gap-1 mt-1">
                                     <a asp-action="Qr" asp-route-id="@item.Id" class="btn btn-sm btn-outline-dark">Audio QR</a>
-                                    <a asp-action="PaymentQr" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Payment QR</a>
                                 </div>
                             </td>
                             <td class="text-center">
