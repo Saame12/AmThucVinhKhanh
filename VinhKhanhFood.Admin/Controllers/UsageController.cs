@@ -16,6 +16,12 @@ public class UsageController : Controller
 
     public async Task<IActionResult> Index(string period = "week")
     {
+        var adminGate = EnsureAdminAccess();
+        if (adminGate is not null)
+        {
+            return adminGate;
+        }
+
         try
         {
             var history = await _http.GetFromJsonAsync<List<UsageHistory>>("Food/history") ?? new List<UsageHistory>();
@@ -39,6 +45,12 @@ public class UsageController : Controller
 
     public async Task<IActionResult> Devices()
     {
+        var adminGate = EnsureAdminAccess();
+        if (adminGate is not null)
+        {
+            return adminGate;
+        }
+
         return RedirectToAction(nameof(Index), new { period = "week" });
     }
 
@@ -250,4 +262,17 @@ public class UsageController : Controller
         "year" => "Thiet bi trong nam",
         _ => "Thiet bi trong tuan"
     };
+
+    private IActionResult? EnsureAdminAccess()
+    {
+        var role = HttpContext.Session.GetString("UserRole");
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
+        return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : RedirectToAction("Index", "Owner");
+    }
 }

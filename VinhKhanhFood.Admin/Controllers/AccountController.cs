@@ -52,7 +52,9 @@ public class AccountController : Controller
             HttpContext.Session.SetInt32("UserId", user.Id);
 
             await UpdatePresenceAsync(user.Id, true);
-            return RedirectToAction("Index", "Home");
+            return string.Equals(role, "Owner", StringComparison.OrdinalIgnoreCase)
+                ? RedirectToAction("Index", "Owner")
+                : RedirectToAction("Index", "Home");
         }
 
         if (loginInfo.Username == "TroLyVinhKhanh" && loginInfo.Password == "1")
@@ -62,7 +64,7 @@ public class AccountController : Controller
             HttpContext.Session.SetInt32("UserId", 999);
             await UpdatePresenceAsync(999, true);
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Owner");
         }
 
         ViewBag.Error = "Tai khoan hoac mat khau khong dung.";
@@ -83,6 +85,12 @@ public class AccountController : Controller
 
     public async Task<IActionResult> Users()
     {
+        var adminGate = EnsureAdminAccess();
+        if (adminGate is not null)
+        {
+            return adminGate;
+        }
+
         try
         {
             var client = _httpClientFactory.CreateClient("MyAPI");
@@ -106,6 +114,12 @@ public class AccountController : Controller
 
     public async Task<IActionResult> Block(int id)
     {
+        var adminGate = EnsureAdminAccess();
+        if (adminGate is not null)
+        {
+            return adminGate;
+        }
+
         try
         {
             var client = _httpClientFactory.CreateClient("MyAPI");
@@ -121,6 +135,12 @@ public class AccountController : Controller
 
     public async Task<IActionResult> Unblock(int id)
     {
+        var adminGate = EnsureAdminAccess();
+        if (adminGate is not null)
+        {
+            return adminGate;
+        }
+
         try
         {
             var client = _httpClientFactory.CreateClient("MyAPI");
@@ -136,6 +156,12 @@ public class AccountController : Controller
 
     public async Task<IActionResult> Delete(int id)
     {
+        var adminGate = EnsureAdminAccess();
+        if (adminGate is not null)
+        {
+            return adminGate;
+        }
+
         try
         {
             var client = _httpClientFactory.CreateClient("MyAPI");
@@ -164,5 +190,18 @@ public class AccountController : Controller
         catch
         {
         }
+    }
+
+    private IActionResult? EnsureAdminAccess()
+    {
+        var role = HttpContext.Session.GetString("UserRole");
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
+        return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : RedirectToAction("Index", "Owner");
     }
 }

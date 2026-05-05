@@ -16,6 +16,12 @@ public class PaymentController : Controller
 
     public async Task<IActionResult> Index(string status = "all")
     {
+        var adminGate = EnsureAdminAccess();
+        if (adminGate is not null)
+        {
+            return adminGate;
+        }
+
         var normalizedStatus = NormalizeStatus(status);
         var query = _dbContext.Subscriptions.AsNoTracking().AsQueryable();
 
@@ -62,5 +68,18 @@ public class PaymentController : Controller
             "expired" => "Expired",
             _ => "all"
         };
+    }
+
+    private IActionResult? EnsureAdminAccess()
+    {
+        var role = HttpContext.Session.GetString("UserRole");
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
+        return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : RedirectToAction("Index", "Owner");
     }
 }

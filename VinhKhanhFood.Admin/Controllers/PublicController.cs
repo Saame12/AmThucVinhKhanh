@@ -64,6 +64,7 @@ public class PublicController : Controller
                 ImageUrl = poi.ImageUrl,
                 Latitude = poi.Latitude,
                 Longitude = poi.Longitude,
+                HasDefaultAudio = !string.IsNullOrWhiteSpace(poi.Description),
                 HasPaid = activeSubscription is not null,
                 HasClaimToken = !string.IsNullOrWhiteSpace(claimToken),
                 ClaimToken = claimToken ?? string.Empty,

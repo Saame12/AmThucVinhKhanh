@@ -8,6 +8,7 @@ public class PublicPoiViewModel
     public string? ImageUrl { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
+    public bool HasDefaultAudio { get; set; }
     public bool HasPaid { get; set; }
     public bool HasClaimToken { get; set; }
     public string ClaimToken { get; set; } = string.Empty;

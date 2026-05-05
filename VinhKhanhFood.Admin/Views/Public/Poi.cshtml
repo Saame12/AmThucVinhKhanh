@@ -59,6 +59,36 @@
             border-radius: 14px;
             border: 1px solid #e2e8f0;
         }
+        .audio-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+            align-items: center;
+        }
+        .audio-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 10px 20px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .audio-btn.play {
+            background: #2563eb;
+            color: white;
+        }
+        .audio-btn.stop {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+        .audio-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .audio-status {
+            font-size: 0.95rem;
+            color: #475569;
+        }
         .unlock-card {
             margin-top: 28px;
             padding: 24px;
@@ -124,16 +154,52 @@
             <div class="feature-box">
                 <strong>Noi dung co ban</strong>
                 <div class="text-muted mt-2">
-                    Ban co the xem mo ta POI tren web. De dung day du chuc nang trong app va nghe audio, hay mo khoa thiet bi voi 10k.
+                    Ban co the xem mo ta POI tren web. Thanh toan 1 lan 10k de mo khoa day du chuc nang tren web public va app cho phien su dung nay.
                 </div>
             </div>
+
+            @if (Model.HasDefaultAudio)
+            {
+                <div class="feature-box">
+                    <strong>Audio mac dinh</strong>
+                    <div class="text-muted mt-2">
+                        @if (Model.HasPaid)
+                        {
+                            <span>Ban da mo khoa. Co the nghe audio mac dinh ngay tren web public.</span>
+                        }
+                        else
+                        {
+                            <span>Hoan tat thanh toan 10k de nghe audio mac dinh va dung day du tinh nang tren web public.</span>
+                        }
+                    </div>
+                    <div class="audio-controls">
+                        <button type="button"
+                                id="playDefaultAudioButton"
+                                class="audio-btn play"
+                                onclick="playDefaultAudio()"
+                                disabled="@(!Model.HasPaid)">
+                            Phat audio
+                        </button>
+                        <button type="button"
+                                id="stopDefaultAudioButton"
+                                class="audio-btn stop"
+                                onclick="stopDefaultAudio()"
+                                disabled>
+                            Dung audio
+                        </button>
+                        <div id="audioStatusLabel" class="audio-status">
+                            @(Model.HasPaid ? "San sang phat audio mac dinh." : "Can mo khoa 10k de bat audio mac dinh.")
+                        </div>
+                    </div>
+                </div>
+            }
 
             @if (Model.HasPaid && Model.HasClaimToken)
             {
                 <div class="unlock-card" style="background:#ecfeff;border-color:#a5f3fc;">
                     <div class="fw-bold fs-5 text-success">Da thanh toan thanh cong</div>
                     <div class="text-muted mt-2">
-                        Thiet bi web da co ma kich hoat. Ban co the tiep tuc tren web hoac mo thang ung dung de claim token cho dien thoai nay.
+                        Ban da mo khoa thanh cong cho web public. Bay gio co the nghe audio mac dinh tren web hoac bam mo trong app de kich hoat tren dien thoai nay.
                     </div>
                     <a href="@Model.OpenInAppUrl" class="open-app-btn">Mo trong app</a>
                     <div class="small text-muted mt-3">
@@ -173,6 +239,78 @@
     </div>
 
     <script>
+        const defaultNarration = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Description ?? string.Empty));
+        const hasPaid = @Model.HasPaid.ToString().ToLowerInvariant();
+        let currentUtterance = null;
+
+        function setAudioButtons(isPlaying) {
+            const playButton = document.getElementById('playDefaultAudioButton');
+            const stopButton = document.getElementById('stopDefaultAudioButton');
+            if (!playButton || !stopButton) {
+                return;
+            }
+
+            playButton.disabled = !hasPaid || isPlaying;
+            stopButton.disabled = !isPlaying;
+        }
+
+        function setAudioStatus(message) {
+            const label = document.getElementById('audioStatusLabel');
+            if (label) {
+                label.textContent = message;
+            }
+        }
+
+        function stopDefaultAudio() {
+            if (!('speechSynthesis' in window)) {
+                setAudioStatus('Trinh duyet nay khong ho tro audio mac dinh.');
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            currentUtterance = null;
+            setAudioButtons(false);
+            setAudioStatus('Da dung audio mac dinh.');
+        }
+
+        function playDefaultAudio() {
+            if (!hasPaid) {
+                setAudioStatus('Can mo khoa 10k de bat audio mac dinh.');
+                return;
+            }
+
+            if (!defaultNarration) {
+                setAudioStatus('POI nay hien chua co noi dung audio mac dinh.');
+                return;
+            }
+
+            if (!('speechSynthesis' in window)) {
+                setAudioStatus('Trinh duyet nay khong ho tro audio mac dinh.');
+                return;
+            }
+
+            stopDefaultAudio();
+
+            currentUtterance = new SpeechSynthesisUtterance(defaultNarration);
+            currentUtterance.lang = 'vi-VN';
+            currentUtterance.onstart = () => {
+                setAudioButtons(true);
+                setAudioStatus('Dang phat audio mac dinh...');
+            };
+            currentUtterance.onend = () => {
+                currentUtterance = null;
+                setAudioButtons(false);
+                setAudioStatus('Audio mac dinh da phat xong.');
+            };
+            currentUtterance.onerror = () => {
+                currentUtterance = null;
+                setAudioButtons(false);
+                setAudioStatus('Khong the phat audio mac dinh luc nay.');
+            };
+
+            window.speechSynthesis.speak(currentUtterance);
+        }
+
         async function verifyPayment() {
             const input = document.getElementById('paymentCodeInput');
             const code = input.value.trim();
@@ -210,6 +348,8 @@
                 }
             });
         }
+
+        window.addEventListener('beforeunload', stopDefaultAudio);
     </script>
 </body>
 </html>

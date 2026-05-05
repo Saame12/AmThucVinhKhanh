@@ -16,6 +16,12 @@ namespace VinhKhanhFood.Admin.Controllers
 
         public IActionResult Index()
         {
+            var role = HttpContext.Session.GetString("UserRole");
+            if (string.Equals(role, "Owner", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Owner");
+            }
+
             return View();
         }
 
