@@ -31,38 +31,15 @@ public class UsageController : Controller
             return View(new UsageDashboardViewModel
             {
                 SelectedPeriod = NormalizePeriod(period),
-                PeriodLabel = GetPeriodLabel(NormalizePeriod(period))
+                PeriodLabel = GetPeriodLabel(NormalizePeriod(period)),
+                ActiveDevicesInPeriodLabel = GetDevicePeriodLabel(NormalizePeriod(period))
             });
         }
     }
 
     public async Task<IActionResult> Devices()
     {
-        try
-        {
-            var users = await _http.GetFromJsonAsync<List<User>>("User") ?? new List<User>();
-            var deviceUsers = users
-                .Where(IsTravelerDevice)
-                .OrderByDescending(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
-                .ThenByDescending(user => user.LastSeenUtc)
-                .ToList();
-
-            var nowUtc = DateTime.UtcNow;
-            var model = new DeviceHistoryViewModel
-            {
-                ActiveDevicesNow = deviceUsers.Count(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase)),
-                ActiveDevicesLast24Hours = deviceUsers.Count(user => user.LastSeenUtc.HasValue && nowUtc - user.LastSeenUtc.Value <= TimeSpan.FromHours(24)),
-                ActiveDevicesThisMonth = deviceUsers.Count(user => user.LastSeenUtc.HasValue && user.LastSeenUtc.Value.Year == nowUtc.Year && user.LastSeenUtc.Value.Month == nowUtc.Month),
-                Devices = deviceUsers
-            };
-
-            return View(model);
-        }
-        catch
-        {
-            TempData["Error"] = "Khong the tai lich su thiet bi vi API chua chay.";
-            return View(new DeviceHistoryViewModel());
-        }
+        return RedirectToAction(nameof(Index), new { period = "week" });
     }
 
     private static UsageDashboardViewModel BuildDashboard(List<UsageHistory> allHistory, List<User> devices, List<FoodLocation> pois, string period)
@@ -70,7 +47,22 @@ public class UsageController : Controller
         var normalizedPeriod = NormalizePeriod(period);
         var periodRange = ResolvePeriodRange(normalizedPeriod);
         var nowUtc = DateTime.UtcNow;
-        var deviceUsers = devices.Where(IsTravelerDevice).ToList();
+        var deviceUsers = devices
+            .Where(IsTravelerDevice)
+            .OrderByDescending(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(user => user.LastSeenUtc)
+            .ToList();
+        var deviceUsersInPeriod = deviceUsers
+            .Where(user => user.LastSeenUtc.HasValue &&
+                           user.LastSeenUtc.Value >= periodRange.Start &&
+                           user.LastSeenUtc.Value < periodRange.End)
+            .ToList();
+        var onlineDeviceUsers = deviceUsers
+            .Where(IsOnline)
+            .ToList();
+        var activeAudioUsers = deviceUsers
+            .Where(IsLiveAudioActive)
+            .ToList();
 
         var travelerHistory = allHistory
             .Where(item => !string.Equals(item.Role, "Admin", StringComparison.OrdinalIgnoreCase))
@@ -90,8 +82,7 @@ public class UsageController : Controller
         var viewRankings = BuildPoiRanking(viewHistory);
         var audioRankings = BuildPoiRanking(audioHistory);
         var heatmapPoints = BuildHeatmapPoints(audioRankings, pois);
-        var activePoiVisitors = deviceUsers
-            .Where(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
+        var activePoiVisitors = onlineDeviceUsers
             .Where(user => string.Equals(user.LocationZoneStatus, "AT_POI", StringComparison.OrdinalIgnoreCase))
             .Where(user => user.CurrentPoiId.HasValue && !string.IsNullOrWhiteSpace(user.CurrentPoiName))
             .GroupBy(user => new { PoiId = user.CurrentPoiId!.Value, PoiName = user.CurrentPoiName! })
@@ -104,8 +95,9 @@ public class UsageController : Controller
             .OrderByDescending(item => item.VisitorCount)
             .ThenBy(item => item.PoiName, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        var betweenPoiVisitors = deviceUsers
-            .Where(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
+        // This metric is currently hidden from UI, but we still keep it for
+        // geofence analytics and future admin visualizations.
+        var betweenPoiVisitors = onlineDeviceUsers
             .Where(user => string.Equals(user.LocationZoneStatus, "BETWEEN_POIS", StringComparison.OrdinalIgnoreCase))
             .Where(user => !string.IsNullOrWhiteSpace(user.CurrentPoiName) && !string.IsNullOrWhiteSpace(user.SecondaryPoiName))
             .GroupBy(user => $"{user.CurrentPoiName} ↔ {user.SecondaryPoiName}")
@@ -117,9 +109,7 @@ public class UsageController : Controller
             .OrderByDescending(item => item.VisitorCount)
             .ThenBy(item => item.RouteLabel, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        var liveAudioQueues = deviceUsers
-            .Where(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase))
-            .Where(IsLiveAudioActive)
+        var liveAudioQueues = activeAudioUsers
             .Where(user => user.CurrentAudioPoiId.HasValue && !string.IsNullOrWhiteSpace(user.CurrentAudioPoiName))
             .GroupBy(user => new { PoiId = user.CurrentAudioPoiId!.Value, PoiName = user.CurrentAudioPoiName! })
             .Select(group => new PoiLiveAudioQueue
@@ -148,9 +138,9 @@ public class UsageController : Controller
             TotalTravelerViews = viewHistory.Count,
             TotalAudioPlays = audioHistory.Count,
             DistinctPois = viewRankings.Select(item => item.PoiId).Union(audioRankings.Select(item => item.PoiId)).Count(),
-            ActiveDevicesNow = deviceUsers.Count(user => string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase)),
-            ActiveDevicesLast24Hours = deviceUsers.Count(user => user.LastSeenUtc.HasValue && nowUtc - user.LastSeenUtc.Value <= TimeSpan.FromHours(24)),
-            ActiveDevicesThisMonth = deviceUsers.Count(user => user.LastSeenUtc.HasValue && user.LastSeenUtc.Value.Year == nowUtc.Year && user.LastSeenUtc.Value.Month == nowUtc.Month),
+            ActiveDevicesNow = onlineDeviceUsers.Count,
+            ActiveDevicesInPeriod = deviceUsersInPeriod.Count,
+            ActiveDevicesInPeriodLabel = GetDevicePeriodLabel(normalizedPeriod),
             VisitorsAtPoiNow = activePoiVisitors.Sum(item => item.VisitorCount),
             VisitorsBetweenPoisNow = betweenPoiVisitors.Sum(item => item.VisitorCount),
             ActiveAudioListenersNow = liveAudioQueues.Sum(item => item.ListenerCount),
@@ -164,7 +154,8 @@ public class UsageController : Controller
             VisitorPresence = activePoiVisitors,
             BetweenPoiVisitors = betweenPoiVisitors,
             LiveAudioQueues = liveAudioQueues,
-            HistoryItems = travelerHistory.Take(100).ToList()
+            HistoryItems = travelerHistory.Take(100).ToList(),
+            DeviceUsers = deviceUsersInPeriod
         };
     }
 
@@ -210,12 +201,16 @@ public class UsageController : Controller
         !string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase) &&
         !string.Equals(user.Role, "Owner", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsOnline(User user) =>
+        string.Equals(user.OnlineStatus, "Online", StringComparison.OrdinalIgnoreCase);
+
     private static bool IsLiveAudioActive(User user) =>
         user.LastAudioHeartbeatUtc.HasValue &&
         DateTime.UtcNow - user.LastAudioHeartbeatUtc.Value <= LiveAudioWindow;
 
     private static string NormalizePeriod(string? period) => period?.Trim().ToLowerInvariant() switch
     {
+        "day" => "day",
         "month" => "month",
         "year" => "year",
         _ => "week"
@@ -223,9 +218,10 @@ public class UsageController : Controller
 
     private static (DateTime Start, DateTime End) ResolvePeriodRange(string period)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         return period switch
         {
+            "day" => (now.Date, now.Date.AddDays(1)),
             "month" => (new DateTime(now.Year, now.Month, 1), new DateTime(now.Year, now.Month, 1).AddMonths(1)),
             "year" => (new DateTime(now.Year, 1, 1), new DateTime(now.Year + 1, 1, 1)),
             _ => ResolveWeekRange(now)
@@ -241,8 +237,17 @@ public class UsageController : Controller
 
     private static string GetPeriodLabel(string period) => period switch
     {
-        "month" => "Thang nay",
-        "year" => "Nam nay",
-        _ => "Tuan nay"
+        "day" => "Hom nay (UTC)",
+        "month" => "Thang nay (UTC)",
+        "year" => "Nam nay (UTC)",
+        _ => "Tuan nay (UTC)"
+    };
+
+    private static string GetDevicePeriodLabel(string period) => period switch
+    {
+        "day" => "Thiet bi trong ngay",
+        "month" => "Thiet bi trong thang",
+        "year" => "Thiet bi trong nam",
+        _ => "Thiet bi trong tuan"
     };
 }

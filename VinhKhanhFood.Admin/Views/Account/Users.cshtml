@@ -2,12 +2,10 @@
 
 @{
     ViewData["Title"] = "Quan ly User";
-    var activeTravelerCount = ViewBag.ActiveTravelerCount is int count ? count : 0;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0">Quan sat nguoi dung app</h2>
-    <span class="badge rounded-pill bg-success fs-6">Dang dung app: @activeTravelerCount</span>
 </div>
 
 @if (TempData["Error"] is string errorMessage)

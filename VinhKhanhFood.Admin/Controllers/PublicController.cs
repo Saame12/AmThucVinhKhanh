@@ -2,19 +2,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VinhKhanhFood.Admin.Models;
 using VinhKhanhFood.API.Data;
+using VinhKhanhFood.API.Models;
 using ApiFoodLocation = VinhKhanhFood.API.Models.FoodLocation;
 
 namespace VinhKhanhFood.Admin.Controllers;
 
 public class PublicController : Controller
 {
+    private const decimal PublicUnlockPrice = 10000m;
     private readonly AppDbContext _context;
-    private readonly IConfiguration _configuration;
 
-    public PublicController(AppDbContext context, IConfiguration configuration)
+    public PublicController(AppDbContext context)
     {
         _context = context;
-        _configuration = configuration;
     }
 
     [HttpGet("/public")]
@@ -22,33 +22,16 @@ public class PublicController : Controller
     {
         try
         {
-            // Read directly from database - no API needed
             var pois = await _context.FoodLocations
-                .Where(p => p.Status == "Approved")
-                .OrderBy(p => p.Id)
+                .Where(poi => poi.Status == "Approved")
+                .OrderBy(poi => poi.Id)
                 .ToListAsync();
 
-            // Check if user has active subscription
             var guestId = Request.Cookies["GuestId"];
-            var hasSubscription = false;
-            DateTime? subscriptionEndDate = null;
+            var activeSubscription = await GetActiveSubscriptionAsync(guestId);
 
-            if (!string.IsNullOrWhiteSpace(guestId))
-            {
-                var subscription = await _context.Subscriptions
-                    .Where(s => s.GuestId == guestId && s.Status == "Active")
-                    .OrderByDescending(s => s.EndDate)
-                    .FirstOrDefaultAsync();
-
-                if (subscription != null && subscription.EndDate > DateTime.UtcNow)
-                {
-                    hasSubscription = true;
-                    subscriptionEndDate = subscription.EndDate;
-                }
-            }
-
-            ViewBag.HasSubscription = hasSubscription;
-            ViewBag.SubscriptionEndDate = subscriptionEndDate;
+            ViewBag.HasSubscription = activeSubscription is not null;
+            ViewBag.SubscriptionEndDate = activeSubscription?.EndDate;
 
             return View(pois);
         }
@@ -63,36 +46,15 @@ public class PublicController : Controller
     {
         try
         {
-            // Read directly from database - no API needed
             var poi = await _context.FoodLocations.FindAsync(id);
-            if (poi == null)
+            if (poi is null)
             {
                 return NotFound("POI not found");
             }
 
-            // Check if user has active subscription (from cookie)
             var guestId = Request.Cookies["GuestId"];
-            var hasPaid = false;
-
-            if (!string.IsNullOrWhiteSpace(guestId))
-            {
-                // Check if subscription exists and is valid
-                var subscription = await _context.Subscriptions
-                    .Where(s => s.GuestId == guestId && s.Status == "Active")
-                    .OrderByDescending(s => s.EndDate)
-                    .FirstOrDefaultAsync();
-
-                if (subscription != null && subscription.EndDate > DateTime.UtcNow)
-                {
-                    hasPaid = true;
-                }
-            }
-
-            // If payment code provided, verify it
-            if (!hasPaid && !string.IsNullOrWhiteSpace(payment))
-            {
-                hasPaid = IsValidPaymentCode(payment);
-            }
+            var activeSubscription = await GetActiveSubscriptionAsync(guestId);
+            var claimToken = ResolveClaimToken(activeSubscription, payment);
 
             var viewModel = new PublicPoiViewModel
             {
@@ -102,8 +64,13 @@ public class PublicController : Controller
                 ImageUrl = poi.ImageUrl,
                 Latitude = poi.Latitude,
                 Longitude = poi.Longitude,
-                HasPaid = hasPaid,
-                Amount = 50000m,
+                HasPaid = activeSubscription is not null,
+                HasClaimToken = !string.IsNullOrWhiteSpace(claimToken),
+                ClaimToken = claimToken ?? string.Empty,
+                OpenInAppUrl = !string.IsNullOrWhiteSpace(claimToken)
+                    ? $"vinhkhanhfood://unlock?token={Uri.EscapeDataString(claimToken)}&poiId={poi.Id}"
+                    : string.Empty,
+                Amount = PublicUnlockPrice,
                 PaymentQrCode = GeneratePaymentQrCode(),
                 PaymentQrImageUrl = GeneratePaymentQrImageUrl()
             };
@@ -124,67 +91,101 @@ public class PublicController : Controller
             return BadRequest(new { success = false, message = "Invalid POI ID" });
         }
 
-        // Verify payment code
-        if (IsValidPaymentCode(request.TransactionCode))
+        if (!IsValidPaymentCode(request.TransactionCode))
         {
-            // Generate or get GuestId
-            var guestId = Request.Cookies["GuestId"];
-            if (string.IsNullOrWhiteSpace(guestId))
-            {
-                guestId = Guid.NewGuid().ToString();
-            }
-
-            // Create 5-year subscription
-            var subscription = new VinhKhanhFood.API.Models.Subscription
-            {
-                GuestId = guestId,
-                PaymentCode = request.TransactionCode,
-                StartDate = DateTime.UtcNow,
-                EndDate = DateTime.UtcNow.AddYears(5),
-                Status = "Active",
-                Amount = 50000m,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Subscriptions.Add(subscription);
-            await _context.SaveChangesAsync();
-
-            // Set cookie for 5 years
-            Response.Cookies.Append("GuestId", guestId, new CookieOptions
-            {
-                Expires = DateTimeOffset.UtcNow.AddYears(5),
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax
-            });
-
-            var redirectUrl = $"/public/poi/{id}";
-            return Ok(new { success = true, redirectUrl, message = "Đã kích hoạt gói 5 năm! Bạn có thể truy cập tất cả POIs." });
+            return BadRequest(new { success = false, message = "Invalid payment code" });
         }
 
-        return BadRequest(new { success = false, message = "Invalid payment code" });
+        var guestId = Request.Cookies["GuestId"];
+        if (string.IsNullOrWhiteSpace(guestId))
+        {
+            guestId = Guid.NewGuid().ToString("N");
+        }
+
+        var claimToken = Guid.NewGuid().ToString("N");
+        var subscription = new Subscription
+        {
+            GuestId = guestId,
+            PaymentCode = request.TransactionCode,
+            ClaimToken = claimToken,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddYears(5),
+            Status = "Active",
+            Amount = PublicUnlockPrice,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Subscriptions.Add(subscription);
+        await _context.SaveChangesAsync();
+
+        Response.Cookies.Append("GuestId", guestId, new CookieOptions
+        {
+            Expires = DateTimeOffset.UtcNow.AddYears(5),
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax
+        });
+
+        var redirectUrl = $"/public/poi/{id}?payment={Uri.EscapeDataString(claimToken)}";
+
+        return Ok(new
+        {
+            success = true,
+            redirectUrl,
+            claimToken,
+            message = "Da mo khoa thanh cong. Ban co the tiep tuc tren web hoac mo trong app."
+        });
     }
 
-    private bool IsValidPaymentCode(string code)
+    private async Task<Subscription?> GetActiveSubscriptionAsync(string? guestId)
     {
-        // Demo mode: Accept codes in format "PAY-XXXX" or "DEMO-5YEAR"
+        if (string.IsNullOrWhiteSpace(guestId))
+        {
+            return null;
+        }
+
+        return await _context.Subscriptions
+            .Where(subscription =>
+                subscription.GuestId == guestId &&
+                subscription.Status == "Active" &&
+                subscription.EndDate > DateTime.UtcNow)
+            .OrderByDescending(subscription => subscription.EndDate)
+            .FirstOrDefaultAsync();
+    }
+
+    private static string? ResolveClaimToken(Subscription? activeSubscription, string? claimTokenQuery)
+    {
+        if (!string.IsNullOrWhiteSpace(claimTokenQuery))
+        {
+            return claimTokenQuery.Trim();
+        }
+
+        if (activeSubscription is not null && !string.IsNullOrWhiteSpace(activeSubscription.ClaimToken))
+        {
+            return activeSubscription.ClaimToken.Trim();
+        }
+
+        return null;
+    }
+
+    private static bool IsValidPaymentCode(string code)
+    {
         if (string.IsNullOrWhiteSpace(code))
+        {
             return false;
+        }
 
-        return code.StartsWith("PAY-", StringComparison.OrdinalIgnoreCase) ||
-               code.Equals("DEMO-5YEAR", StringComparison.OrdinalIgnoreCase);
+        return code.StartsWith("PAY-10K-", StringComparison.OrdinalIgnoreCase) ||
+               code.Equals("DEMO-10K", StringComparison.OrdinalIgnoreCase);
     }
 
-    private string GeneratePaymentQrCode()
-    {
-        // Generate a demo payment code for 5-year subscription
-        return $"PAY-5YEAR-{DateTime.UtcNow:yyyyMMddHHmmss}";
-    }
+    private static string GeneratePaymentQrCode() =>
+        $"PAY-10K-{DateTime.UtcNow:yyyyMMddHHmmss}";
 
-    private string GeneratePaymentQrImageUrl()
+    private static string GeneratePaymentQrImageUrl()
     {
         var paymentCode = GeneratePaymentQrCode();
-        var paymentUri = $"vinhkhanhpay://subscribe?code={paymentCode}";
+        var paymentUri = $"vinhkhanhpay://unlock?code={paymentCode}&amount={PublicUnlockPrice:0}";
         return $"https://quickchart.io/qr?size=300&text={Uri.EscapeDataString(paymentUri)}";
     }
 }

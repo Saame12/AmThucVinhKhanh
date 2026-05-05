@@ -119,6 +119,135 @@ public class UserController : ControllerBase
         return Ok(new { activeTravelerCount });
     }
 
+    [HttpGet("unlock-status")]
+    public async Task<IActionResult> GetUnlockStatus([FromQuery] string guestId)
+    {
+        if (string.IsNullOrWhiteSpace(guestId))
+        {
+            return BadRequest(new { message = "GuestId is required." });
+        }
+
+        var normalizedGuestId = guestId.Trim();
+        var activeUnlock = await _context.Subscriptions
+            .Where(subscription =>
+                subscription.Status == "Active" &&
+                subscription.ClaimedGuestId == normalizedGuestId &&
+                subscription.EndDate > DateTime.UtcNow)
+            .OrderByDescending(subscription => subscription.EndDate)
+            .FirstOrDefaultAsync();
+
+        return Ok(new
+        {
+            guestId = normalizedGuestId,
+            hasFullAccess = activeUnlock is not null,
+            unlockEndDateUtc = activeUnlock?.EndDate,
+            claimedAtUtc = activeUnlock?.ClaimedAtUtc
+        });
+    }
+
+    [HttpPost("claim-unlock")]
+    public async Task<IActionResult> ClaimUnlock([FromBody] ClaimUnlockRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.GuestId) || string.IsNullOrWhiteSpace(request.ClaimToken))
+        {
+            return BadRequest(new { message = "GuestId and claim token are required." });
+        }
+
+        var normalizedGuestId = request.GuestId.Trim();
+        var normalizedToken = request.ClaimToken.Trim();
+
+        var subscription = await _context.Subscriptions
+            .Where(item =>
+                item.ClaimToken == normalizedToken &&
+                item.Status == "Active" &&
+                item.EndDate > DateTime.UtcNow)
+            .OrderByDescending(item => item.EndDate)
+            .FirstOrDefaultAsync();
+
+        if (subscription is null)
+        {
+            return NotFound(new { message = "Unlock token is invalid or expired." });
+        }
+
+        if (!string.IsNullOrWhiteSpace(subscription.ClaimedGuestId) &&
+            !string.Equals(subscription.ClaimedGuestId, normalizedGuestId, StringComparison.OrdinalIgnoreCase))
+        {
+            return Conflict(new { message = "Unlock token has already been claimed on another device." });
+        }
+
+        subscription.ClaimedGuestId = normalizedGuestId;
+        subscription.ClaimedAtUtc ??= DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            guestId = normalizedGuestId,
+            hasFullAccess = true,
+            unlockEndDateUtc = subscription.EndDate,
+            claimedAtUtc = subscription.ClaimedAtUtc
+        });
+    }
+
+    [HttpPost("purchase-unlock")]
+    public async Task<IActionResult> PurchaseUnlock([FromBody] PurchaseUnlockRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.GuestId))
+        {
+            return BadRequest(new { message = "GuestId is required." });
+        }
+
+        var normalizedGuestId = request.GuestId.Trim();
+        var existingUnlock = await _context.Subscriptions
+            .Where(subscription =>
+                subscription.Status == "Active" &&
+                subscription.ClaimedGuestId == normalizedGuestId &&
+                subscription.EndDate > DateTime.UtcNow)
+            .OrderByDescending(subscription => subscription.EndDate)
+            .FirstOrDefaultAsync();
+
+        if (existingUnlock is not null)
+        {
+            return Ok(new
+            {
+                guestId = normalizedGuestId,
+                hasFullAccess = true,
+                unlockEndDateUtc = existingUnlock.EndDate,
+                claimedAtUtc = existingUnlock.ClaimedAtUtc,
+                paymentCode = existingUnlock.PaymentCode,
+                source = "Existing"
+            });
+        }
+
+        var nowUtc = DateTime.UtcNow;
+        var subscription = new Subscription
+        {
+            GuestId = normalizedGuestId,
+            PaymentCode = $"APP-10K-{nowUtc:yyyyMMddHHmmss}",
+            ClaimToken = Guid.NewGuid().ToString("N"),
+            ClaimedGuestId = normalizedGuestId,
+            ClaimedAtUtc = nowUtc,
+            StartDate = nowUtc,
+            EndDate = nowUtc.AddYears(5),
+            Status = "Active",
+            Amount = 10000m,
+            CreatedAt = nowUtc
+        };
+
+        _context.Subscriptions.Add(subscription);
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            guestId = normalizedGuestId,
+            hasFullAccess = true,
+            unlockEndDateUtc = subscription.EndDate,
+            claimedAtUtc = subscription.ClaimedAtUtc,
+            paymentCode = subscription.PaymentCode,
+            source = "InApp"
+        });
+    }
+
     [HttpPut("visitor-location")]
     public async Task<IActionResult> UpdateVisitorLocation([FromBody] VisitorLocationRequest request)
     {
@@ -485,4 +614,15 @@ public sealed class LoginRequest
 {
     public string Username { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+}
+
+public sealed class ClaimUnlockRequest
+{
+    public string GuestId { get; set; } = string.Empty;
+    public string ClaimToken { get; set; } = string.Empty;
+}
+
+public sealed class PurchaseUnlockRequest
+{
+    public string GuestId { get; set; } = string.Empty;
 }

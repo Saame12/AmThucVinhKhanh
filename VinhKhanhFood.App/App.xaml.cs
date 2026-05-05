@@ -1,4 +1,5 @@
 using VinhKhanhFood.App.Services;
+using Microsoft.Maui.ApplicationModel;
 
 namespace VinhKhanhFood.App;
 
@@ -106,31 +107,8 @@ public partial class App : Application
 
     private async Task<QrOpenResult> HandleIncomingUriAsync(Uri uri)
     {
-        if (TryExtractPaymentInfo(uri, out var paymentPoiId, out var amount))
+        if (await TryHandleUnlockUriAsync(uri))
         {
-            var paymentLocations = await new ApiService().GetFoodLocationsAsync();
-            if (paymentLocations.Count == 0)
-            {
-                return QrOpenResult.Unavailable;
-            }
-
-            var paymentPoi = paymentLocations.FirstOrDefault(item => item.Id == paymentPoiId);
-            if (paymentPoi is null)
-            {
-                return QrOpenResult.NotFound;
-            }
-
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                if (Shell.Current is null)
-                {
-                    return;
-                }
-
-                await Shell.Current.GoToAsync("//ExploreTab");
-                await Shell.Current.Navigation.PushAsync(new DetailPage(paymentPoi));
-            });
-
             return QrOpenResult.Success;
         }
 
@@ -166,6 +144,62 @@ public partial class App : Application
         return QrOpenResult.Success;
     }
 
+    private async Task<bool> TryHandleUnlockUriAsync(Uri uri)
+    {
+        if (!string.Equals(uri.Scheme, "vinhkhanhfood", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(uri.Host, "unlock", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var token = GetQueryParameter(uri, "token");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        var claimed = await Auth.ClaimUnlockAsync(token);
+        if (!claimed)
+        {
+            await MainThread.InvokeOnMainThreadAsync(() =>
+                Current?.MainPage?.DisplayAlert("Thong bao", "Khong the kich hoat mo khoa tu lien ket nay.", "OK"));
+            return true;
+        }
+
+        if (int.TryParse(GetQueryParameter(uri, "poiId"), out var poiId))
+        {
+            var apiService = new ApiService();
+            var locations = await apiService.GetFoodLocationsAsync();
+            var poi = locations.FirstOrDefault(item => item.Id == poiId);
+            if (poi is not null)
+            {
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    if (Shell.Current is null)
+                    {
+                        return;
+                    }
+
+                    await Shell.Current.GoToAsync("//ExploreTab");
+                    await Shell.Current.Navigation.PushAsync(new DetailPage(poi, autoPlayAudio: true));
+                });
+
+                return true;
+            }
+        }
+
+        await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            await Current!.MainPage!.DisplayAlert("Thong bao", "Da mo khoa thanh cong cho thiet bi nay.", "OK");
+            if (Shell.Current is not null)
+            {
+                await Shell.Current.GoToAsync("//ExploreTab");
+            }
+        });
+
+        return true;
+    }
+
     private async Task ReloadShellAsync()
     {
         try
@@ -198,17 +232,20 @@ public partial class App : Application
     {
         poiId = 0;
 
-        if (!string.Equals(uri.Scheme, "vinhkhanhfood", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(uri.Scheme, "vinhkhanhfood", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(uri.Host, "poi", StringComparison.OrdinalIgnoreCase))
         {
-            return false;
+            return int.TryParse(uri.AbsolutePath.Trim('/'), out poiId);
         }
 
-        if (!string.Equals(uri.Host, "poi", StringComparison.OrdinalIgnoreCase))
+        if ((string.Equals(uri.Scheme, "http", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase)) &&
+            TryExtractPoiIdFromPublicPath(uri.AbsolutePath, out poiId))
         {
-            return false;
+            return true;
         }
 
-        return int.TryParse(uri.AbsolutePath.Trim('/'), out poiId);
+        return false;
     }
 
     private static bool TryCreateSupportedQrUri(string rawValue, out Uri uri)
@@ -235,16 +272,11 @@ public partial class App : Application
             return true;
         }
 
-        if (normalized.StartsWith("VK-PAY-", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith("VK-PAY-", StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(normalized["VK-PAY-".Length..], out var paymentPoiId))
         {
-            var segments = normalized.Split('-', StringSplitOptions.RemoveEmptyEntries);
-            if (segments.Length >= 4 &&
-                int.TryParse(segments[2], out var paymentPoiId) &&
-                decimal.TryParse(segments[3], out var paymentAmount))
-            {
-                uri = new Uri($"vinhkhanhpay://payment/poi/{paymentPoiId}?amount={paymentAmount}");
-                return true;
-            }
+            uri = new Uri($"vinhkhanhfood://poi/{paymentPoiId}");
+            return true;
         }
 
         if (int.TryParse(normalized, out var numericPoiId))
@@ -256,44 +288,39 @@ public partial class App : Application
         return false;
     }
 
-    private static bool TryExtractPaymentInfo(Uri uri, out int poiId, out decimal amount)
+    private static string? GetQueryParameter(Uri uri, string key)
+    {
+        var query = uri.Query.TrimStart('?');
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = pair.Split('=', 2);
+            if (parts.Length == 2 && string.Equals(parts[0], key, StringComparison.OrdinalIgnoreCase))
+            {
+                return Uri.UnescapeDataString(parts[1]);
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryExtractPoiIdFromPublicPath(string absolutePath, out int poiId)
     {
         poiId = 0;
-        amount = 0;
 
-        if (!string.Equals(uri.Scheme, "vinhkhanhpay", StringComparison.OrdinalIgnoreCase))
+        var segments = absolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 3)
         {
             return false;
         }
 
-        if (!string.Equals(uri.Host, "payment", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        var segments = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length != 2 ||
-            !string.Equals(segments[0], "poi", StringComparison.OrdinalIgnoreCase) ||
-            !int.TryParse(segments[1], out poiId))
-        {
-            return false;
-        }
-
-        var query = uri.Query.TrimStart('?')
-            .Split('&', StringSplitOptions.RemoveEmptyEntries)
-            .Select(part => part.Split('=', 2))
-            .ToDictionary(
-                parts => Uri.UnescapeDataString(parts[0]),
-                parts => parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : string.Empty,
-                StringComparer.OrdinalIgnoreCase);
-
-        if (!query.TryGetValue("amount", out var amountRaw) ||
-            !decimal.TryParse(amountRaw, out amount))
-        {
-            amount = 50000m;
-        }
-
-        return true;
+        return string.Equals(segments[0], "public", StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(segments[1], "poi", StringComparison.OrdinalIgnoreCase) &&
+               int.TryParse(segments[2], out poiId);
     }
 
     public enum QrOpenResult

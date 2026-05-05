@@ -25,17 +25,16 @@
             padding: 20px;
         }
         .poi-container {
-            max-width: 800px;
+            max-width: 860px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
         }
         .poi-image {
             width: 100%;
-            height: 400px;
+            height: 380px;
             object-fit: cover;
         }
         .poi-content {
@@ -45,115 +44,70 @@
             font-size: 2rem;
             font-weight: bold;
             color: #1a202c;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .poi-description {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             line-height: 1.8;
             color: #4a5568;
             white-space: pre-wrap;
         }
-        .audio-player {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f7fafc;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
+        .feature-box {
+            margin-top: 24px;
+            padding: 18px;
+            background: #f8fafc;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
         }
-        .blur-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            backdrop-filter: blur(20px);
-            background: rgba(255, 255, 255, 0.7);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .unlock-card {
+            margin-top: 28px;
+            padding: 24px;
+            border-radius: 18px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
         }
-        .payment-modal {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-        }
-        .payment-qr {
-            width: 300px;
-            height: 300px;
-            margin: 20px auto;
-            border: 3px solid #667eea;
-            border-radius: 12px;
-            padding: 10px;
-            background: white;
-        }
-        .payment-amount {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #667eea;
-            margin: 20px 0;
-        }
-        .payment-instruction {
-            color: #718096;
-            margin-bottom: 20px;
-            line-height: 1.6;
+        .unlock-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #c2410c;
         }
         .demo-code {
-            background: #f7fafc;
-            padding: 15px;
-            border-radius: 8px;
-            border: 2px dashed #cbd5e0;
-            margin-top: 20px;
-            font-family: monospace;
-            font-size: 1.1rem;
-            color: #2d3748;
+            background: white;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px dashed #fdba74;
+            font-family: Consolas, monospace;
+            font-size: 1rem;
+            color: #9a3412;
         }
-        .verify-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .primary-btn {
+            background: linear-gradient(135deg, #ea580c 0%, #f59e0b 100%);
             color: white;
             border: none;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 1.1rem;
+            padding: 14px 28px;
+            border-radius: 999px;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 20px;
-            transition: transform 0.2s;
         }
-        .verify-btn:hover {
-            transform: scale(1.05);
+        .open-app-btn {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 12px 24px;
+            border-radius: 999px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
         }
-        .verify-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .header {
-            max-width: 800px;
-            margin: 0 auto 20px;
-        }
-        .header a {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50px;
-            transition: background 0.3s;
-        }
-        .header a:hover {
-            background: rgba(255, 255, 255, 0.3);
+        .open-app-btn:hover {
+            color: white;
+            background: #1d4ed8;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <a href="/public" style="color: white; text-decoration: none; display: inline-block; margin-bottom: 20px;">
-            ← Quay lại danh sách
-        </a>
+    <div class="container mb-3" style="max-width:860px;">
+        <a href="/public" class="text-white text-decoration-none">← Quay lai danh sach</a>
     </div>
 
     <div class="poi-container">
@@ -167,104 +121,95 @@
                 <div class="poi-description">@Model.Description</div>
             }
 
-            <div class="audio-player">
-                <div class="d-flex align-items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="me-2" viewBox="0 0 16 16">
-                        <path d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-.708.707A7.476 7.476 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303l.708.707z"/>
-                        <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.483 5.483 0 0 1 11.025 8a5.483 5.483 0 0 1-1.61 3.89l.706.706z"/>
-                        <path d="M8.707 11.182A4.486 4.486 0 0 0 10.025 8a4.486 4.486 0 0 0-1.318-3.182L8 5.525A3.489 3.489 0 0 1 9.025 8 3.49 3.49 0 0 1 8 10.475l.707.707zM6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06z"/>
-                    </svg>
-                    <strong>Audio Guide Available</strong>
+            <div class="feature-box">
+                <strong>Noi dung co ban</strong>
+                <div class="text-muted mt-2">
+                    Ban co the xem mo ta POI tren web. De dung day du chuc nang trong app va nghe audio, hay mo khoa thiet bi voi 10k.
                 </div>
-                <p class="text-muted mb-0 mt-2 small">Text-to-speech narration will play the description above</p>
             </div>
+
+            @if (Model.HasPaid && Model.HasClaimToken)
+            {
+                <div class="unlock-card" style="background:#ecfeff;border-color:#a5f3fc;">
+                    <div class="fw-bold fs-5 text-success">Da thanh toan thanh cong</div>
+                    <div class="text-muted mt-2">
+                        Thiet bi web da co ma kich hoat. Ban co the tiep tuc tren web hoac mo thang ung dung de claim token cho dien thoai nay.
+                    </div>
+                    <a href="@Model.OpenInAppUrl" class="open-app-btn">Mo trong app</a>
+                    <div class="small text-muted mt-3">
+                        Token demo: <code>@Model.ClaimToken</code>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="unlock-card">
+                    <div class="fw-bold fs-4">Mo khoa toan bo chuc nang</div>
+                    <div class="text-muted mt-2">
+                        Thanh toan 1 lan de mo khoa app cho thiet bi nay. Sau khi thanh toan xong, bam <strong>Mo trong app</strong> de kich hoat tren dien thoai.
+                    </div>
+
+                    <div class="unlock-price mt-3">@Model.Amount.ToString("N0") VND</div>
+
+                    <img src="@Model.PaymentQrImageUrl"
+                         alt="Payment QR"
+                         style="width:260px;height:260px;border-radius:14px;border:2px solid #fdba74;padding:10px;background:white;"
+                         class="mt-3" />
+
+                    <div class="demo-code mt-3">
+                        Demo code: <strong>@Model.PaymentQrCode</strong><br />
+                        Hoac dung ma nhanh: <strong>DEMO-10K</strong>
+                    </div>
+
+                    <input type="text"
+                           id="paymentCodeInput"
+                           class="form-control mt-3"
+                           placeholder="Nhap ma thanh toan demo de mo khoa" />
+
+                    <button class="primary-btn mt-3" onclick="verifyPayment()">Thanh toan @Model.Amount.ToString("N0") VND</button>
+                </div>
+            }
         </div>
-
-        @if (!Model.HasPaid)
-        {
-            <div class="blur-overlay">
-                <div class="payment-modal">
-                    <h2 style="color: #1a202c; margin-bottom: 10px;">🔒 Mua Gói 5 Năm</h2>
-                    <p class="payment-instruction">
-                        Thanh toán <strong>1 lần duy nhất</strong> để truy cập <strong>TẤT CẢ POIs</strong> trong <strong>5 năm</strong>
-                    </p>
-
-                    <div class="payment-amount">50,000 VND</div>
-                    <div class="text-muted mb-3">
-                        <small>✨ Truy cập không giới hạn tất cả điểm POI</small><br/>
-                        <small>⏰ Hiệu lực: 5 năm (đến 29/04/2031)</small>
-                    </div>
-
-                    <img src="@Model.PaymentQrImageUrl" alt="Payment QR Code" class="payment-qr" />
-
-                    <div class="demo-code">
-                        <strong>Demo Mode:</strong><br/>
-                        Payment Code: <span style="color: #667eea;">@Model.PaymentQrCode</span><br/>
-                        <small class="text-muted">Hoặc dùng: <strong>DEMO-5YEAR</strong></small>
-                    </div>
-
-                    <input type="text" id="paymentCodeInput" class="form-control mt-3" placeholder="Nhập mã thanh toán để kích hoạt" />
-
-                    <button class="verify-btn" onclick="verifyPayment()">
-                        Kích Hoạt Gói 5 Năm
-                    </button>
-
-                    <p class="text-muted small mt-3">
-                        Trong production, tích hợp với Momo, VNPay, hoặc chuyển khoản ngân hàng
-                    </p>
-                </div>
-            </div>
-        }
     </div>
 
     <script>
         async function verifyPayment() {
             const input = document.getElementById('paymentCodeInput');
             const code = input.value.trim();
-            const btn = document.querySelector('.verify-btn');
 
             if (!code) {
-                alert('Please enter a payment code');
+                alert('Hay nhap ma thanh toan demo.');
                 return;
             }
 
-            btn.disabled = true;
-            btn.textContent = 'Verifying...';
+            const response = await fetch('/public/poi/@Model.PoiId/verify-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    poiId: @Model.PoiId,
+                    transactionCode: code
+                })
+            });
 
-            try {
-                const response = await fetch('/public/poi/@Model.PoiId/verify-payment', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        poiId: @Model.PoiId,
-                        transactionCode: code
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    window.location.href = result.redirectUrl;
-                } else {
-                    alert(result.message || 'Invalid payment code');
-                    btn.disabled = false;
-                    btn.textContent = 'Verify Payment';
-                }
-            } catch (error) {
-                alert('Verification failed. Please try again.');
-                btn.disabled = false;
-                btn.textContent = 'Verify Payment';
+            const result = await response.json();
+            if (result.success) {
+                window.location.href = result.redirectUrl;
+                return;
             }
+
+            alert(result.message || 'Khong the xac nhan thanh toan.');
         }
 
-        // Allow Enter key to submit
-        document.getElementById('paymentCodeInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                verifyPayment();
-            }
-        });
+        const paymentCodeInput = document.getElementById('paymentCodeInput');
+        if (paymentCodeInput) {
+            paymentCodeInput.addEventListener('keypress', function (event) {
+                if (event.key === 'Enter') {
+                    verifyPayment();
+                }
+            });
+        }
     </script>
 </body>
 </html>

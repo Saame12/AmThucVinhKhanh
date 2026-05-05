@@ -13,6 +13,7 @@ public sealed class AuthService
     private PeriodicTimer? _audioTimer;
     private CancellationTokenSource? _audioCancellation;
     private int? _currentAudioPoiId;
+    private bool _hasFullAccess;
 
     public AuthService()
     {
@@ -24,9 +25,26 @@ public sealed class AuthService
         _httpClient = new HttpClient(handler);
         StartPresenceHeartbeat();
         _ = SetPresenceAsync(true);
+        _ = RefreshUnlockStatusAsync();
     }
 
     public string GuestId { get; } = GetOrCreateGuestId();
+    public bool HasFullAccess
+    {
+        get => _hasFullAccess;
+        private set
+        {
+            if (_hasFullAccess == value)
+            {
+                return;
+            }
+
+            _hasFullAccess = value;
+            UnlockStatusChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public event EventHandler? UnlockStatusChanged;
 
     public async Task SetPresenceAsync(bool isOnline, CancellationToken cancellationToken = default)
     {
@@ -120,6 +138,81 @@ public sealed class AuthService
         };
     }
 
+    public async Task<bool> RefreshUnlockStatusAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<UnlockStatusResponse>(
+                $"{ApiEndpointResolver.UserEndpoint}/unlock-status?guestId={Uri.EscapeDataString(GuestId)}",
+                cancellationToken);
+
+            HasFullAccess = result?.HasFullAccess == true;
+            return HasFullAccess;
+        }
+        catch
+        {
+            return HasFullAccess;
+        }
+    }
+
+    public async Task<bool> ClaimUnlockAsync(string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var response = await _httpClient.PostAsJsonAsync(
+                $"{ApiEndpointResolver.UserEndpoint}/claim-unlock",
+                new
+                {
+                    GuestId,
+                    ClaimToken = token.Trim()
+                },
+                cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            HasFullAccess = true;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> PurchaseUnlockAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var response = await _httpClient.PostAsJsonAsync(
+                $"{ApiEndpointResolver.UserEndpoint}/purchase-unlock",
+                new
+                {
+                    GuestId
+                },
+                cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            HasFullAccess = true;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static string GetOrCreateGuestId()
     {
         var existingGuestId = Preferences.Default.Get(PreferenceGuestId, string.Empty);
@@ -189,5 +282,10 @@ public sealed class AuthService
         catch
         {
         }
+    }
+
+    private sealed class UnlockStatusResponse
+    {
+        public bool HasFullAccess { get; set; }
     }
 }

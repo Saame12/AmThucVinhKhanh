@@ -102,6 +102,26 @@
                                 HorizontalOptions="Fill"
                                 Clicked="OnCancelAudioClicked" />
                     </HorizontalStackLayout>
+
+                    <Border x:Name="UnlockPanel"
+                            IsVisible="False"
+                            BackgroundColor="#FEF3C7"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 18"
+                            Padding="14">
+                        <VerticalStackLayout Spacing="10">
+                            <Label x:Name="UnlockStatusLabel"
+                                   FontSize="13"
+                                   TextColor="#92400E" />
+                            <Button x:Name="UnlockButton"
+                                    Text="Mo khoa 10k"
+                                    BackgroundColor="#F59E0B"
+                                    TextColor="White"
+                                    CornerRadius="14"
+                                    HeightRequest="44"
+                                    Clicked="OnUnlockClicked" />
+                        </VerticalStackLayout>
+                    </Border>
                 </VerticalStackLayout>
             </Border>
         </VerticalStackLayout>

@@ -22,14 +22,6 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0">Thong ke truy cap va nghe audio cua khach du lich</h2>
-    <form method="get" class="d-flex gap-2">
-        <select name="period" class="form-select">
-            <option value="week" selected="@(Model.SelectedPeriod == "week")">Tuan</option>
-            <option value="month" selected="@(Model.SelectedPeriod == "month")">Thang</option>
-            <option value="year" selected="@(Model.SelectedPeriod == "year")">Nam</option>
-        </select>
-        <button type="submit" class="btn btn-primary">Xem</button>
-    </form>
 </div>
 
 @if (TempData["Error"] is string errorMessage)
@@ -37,184 +29,122 @@
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<p class="text-muted">Khoang thoi gian dang xem: <strong>@Model.PeriodLabel</strong></p>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-2">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="text-muted small">Online hien tai</div>
-                <div class="fs-3 fw-bold">@Model.ActiveDevicesNow</div>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <div>
+                <h4 class="mb-1">Nhom 1: Xem truc tuyen</h4>
+                <div class="text-muted small">Du lieu thoi gian thuc, khong phu thuoc vao bo loc ngay/tuan/thang/nam.</div>
             </div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">Live now</span>
         </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="text-muted small">Thiet bi 24h</div>
-                <div class="fs-3 fw-bold">@Model.ActiveDevicesLast24Hours</div>
+        <div class="row g-3 mt-1">
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Online hien tai</div>
+                        <div class="fs-3 fw-bold">@Model.ActiveDevicesNow</div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="text-muted small">Thiet bi thang nay</div>
-                <div class="fs-3 fw-bold">@Model.ActiveDevicesThisMonth</div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Nguoi dang nghe</div>
+                        <div class="fs-3 fw-bold">@Model.ActiveAudioListenersNow</div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="text-muted small">Luot xem POI</div>
-                <div class="fs-3 fw-bold">@Model.TotalTravelerViews</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="text-muted small">Luot nghe audio</div>
-                <div class="fs-3 fw-bold">@Model.TotalAudioPlays</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="text-muted small">So POI co data</div>
-                <div class="fs-3 fw-bold">@Model.DistinctPois</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="text-muted small">Visitor tai POI</div>
-                <div class="fs-3 fw-bold">@Model.VisitorsAtPoiNow</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="text-muted small">Visitor giua 2 POI</div>
-                <div class="fs-3 fw-bold">@Model.VisitorsBetweenPoisNow</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="text-muted small">Nguoi dang nghe</div>
-                <div class="fs-3 fw-bold">@Model.ActiveAudioListenersNow</div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">So visitor tai POI</div>
+                        <div class="fs-3 fw-bold">@Model.VisitorsAtPoiNow</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5 class="card-title">Visitor dang o tung POI</h5>
-                <table class="table table-bordered table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>POI</th>
-                            <th>Visitor online</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @if (Model.VisitorPresence.Count == 0)
-                    {
-                        <tr><td colspan="2" class="text-center text-muted">Chua co visitor nao dang o trong vung POI.</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var item in Model.VisitorPresence)
-                        {
-                            <tr>
-                                <td>@item.PoiName (@item.PoiId)</td>
-                                <td>@item.VisitorCount</td>
-                            </tr>
-                        }
-                    }
-                    </tbody>
-                </table>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <h4 class="mb-1">Nhom 2: Xem theo loc</h4>
+                <div class="text-muted small">Tat ca chi so ben duoi duoc loc theo bo loc thong ke va hien theo chuan UTC.</div>
             </div>
+            <form method="get" class="d-flex gap-2">
+                <select name="period" class="form-select">
+                    <option value="day" selected="@(Model.SelectedPeriod == "day")">Ngay</option>
+                    <option value="week" selected="@(Model.SelectedPeriod == "week")">Tuan</option>
+                    <option value="month" selected="@(Model.SelectedPeriod == "month")">Thang</option>
+                    <option value="year" selected="@(Model.SelectedPeriod == "year")">Nam</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Xem</button>
+            </form>
         </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5 class="card-title">Visitor dang dung giua 2 POI</h5>
-                <table class="table table-bordered table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Tuyen POI</th>
-                            <th>Visitor</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @if (Model.BetweenPoiVisitors.Count == 0)
-                    {
-                        <tr><td colspan="2" class="text-center text-muted">Chua co visitor nao o trang thai BETWEEN_POIS.</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var item in Model.BetweenPoiVisitors)
-                        {
-                            <tr>
-                                <td>@item.RouteLabel</td>
-                                <td>@item.VisitorCount</td>
-                            </tr>
-                        }
-                    }
-                    </tbody>
-                </table>
+        <p class="text-muted mb-3">Bo loc thong ke dang ap dung (UTC): <strong>@Model.PeriodLabel</strong></p>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">@Model.ActiveDevicesInPeriodLabel</div>
+                        <div class="fs-3 fw-bold">@Model.ActiveDevicesInPeriod</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Luot xem POI</div>
+                        <div class="fs-3 fw-bold">@Model.TotalTravelerViews</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Luot nghe audio</div>
+                        <div class="fs-3 fw-bold">@Model.TotalAudioPlays</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card shadow-sm h-100 border-success">
-            <div class="card-body">
-                <div class="text-muted small">POI xem nhieu nhat</div>
-                <div class="fw-bold">@((Model.MostVisitedPoi?.PoiName) ?? "Chua co du lieu")</div>
-                <div class="small text-success">@((Model.MostVisitedPoi?.VisitCount).GetValueOrDefault()) luot</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm h-100 border-warning">
-            <div class="card-body">
-                <div class="text-muted small">POI xem it nhat</div>
-                <div class="fw-bold">@((Model.LeastVisitedPoi?.PoiName) ?? "Chua co du lieu")</div>
-                <div class="small text-warning">@((Model.LeastVisitedPoi?.VisitCount).GetValueOrDefault()) luot</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm h-100 border-success">
-            <div class="card-body">
-                <div class="text-muted small">POI nghe nhieu nhat</div>
-                <div class="fw-bold">@((Model.MostPlayedPoi?.PoiName) ?? "Chua co du lieu")</div>
-                <div class="small text-success">@((Model.MostPlayedPoi?.VisitCount).GetValueOrDefault()) luot</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm h-100 border-warning">
-            <div class="card-body">
-                <div class="text-muted small">POI nghe it nhat</div>
-                <div class="fw-bold">@((Model.LeastPlayedPoi?.PoiName) ?? "Chua co du lieu")</div>
-                <div class="small text-warning">@((Model.LeastPlayedPoi?.VisitCount).GetValueOrDefault()) luot</div>
-            </div>
-        </div>
+<div class="mb-4">
+    <h5 class="mb-3">Chi tiet xem truc tuyen</h5>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Visitor dang o tung POI</h5>
+        <table class="table table-bordered table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>POI</th>
+                    <th>Visitor online</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model.VisitorPresence.Count == 0)
+            {
+                <tr><td colspan="2" class="text-center text-muted">Chua co visitor nao dang o trong vung POI.</td></tr>
+            }
+            else
+            {
+                @foreach (var item in Model.VisitorPresence)
+                {
+                    <tr>
+                        <td>@item.PoiName (@item.PoiId)</td>
+                        <td>@item.VisitorCount</td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -260,6 +190,99 @@
                 }
             </div>
         }
+    </div>
+</div>
+
+<div class="mb-4">
+    <h5 class="mb-3">Chi tiet theo bo loc thong ke</h5>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">POI xem nhieu nhat</div>
+                <div class="fw-bold">@((Model.MostVisitedPoi?.PoiName) ?? "Chua co du lieu")</div>
+                <div class="small text-success">@((Model.MostVisitedPoi?.VisitCount).GetValueOrDefault()) luot</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">POI xem it nhat</div>
+                <div class="fw-bold">@((Model.LeastVisitedPoi?.PoiName) ?? "Chua co du lieu")</div>
+                <div class="small text-warning">@((Model.LeastVisitedPoi?.VisitCount).GetValueOrDefault()) luot</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">POI nghe nhieu nhat</div>
+                <div class="fw-bold">@((Model.MostPlayedPoi?.PoiName) ?? "Chua co du lieu")</div>
+                <div class="small text-success">@((Model.MostPlayedPoi?.VisitCount).GetValueOrDefault()) luot</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">POI nghe it nhat</div>
+                <div class="fw-bold">@((Model.LeastPlayedPoi?.PoiName) ?? "Chua co du lieu")</div>
+                <div class="small text-warning">@((Model.LeastPlayedPoi?.VisitCount).GetValueOrDefault()) luot</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">Lich su thiet bi / guid trong ky</h5>
+            <span class="text-muted small">Danh sach nay dang duoc loc theo bo loc thong ke (UTC)</span>
+        </div>
+        <table class="table table-bordered table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Loai</th>
+                    <th>Trang thai</th>
+                    <th>Last seen (UTC)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.DeviceUsers.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">Chua co du lieu thiet bi.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var device in Model.DeviceUsers)
+                    {
+                        <tr>
+                            <td>@(string.IsNullOrWhiteSpace(device.DisplayId) ? device.Id.ToString() : device.DisplayId)</td>
+                            <td>@device.Username</td>
+                            <td>@(device.IsVirtual ? "guid" : "registered")</td>
+                            <td>
+                                @if (device.OnlineStatus == "Online")
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Online</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Offline</span>
+                                }
+                            </td>
+                            <td>@(device.LastSeenUtc?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -369,7 +392,7 @@
                     <th>Action</th>
                     <th>POI</th>
                     <th>Role</th>
-                    <th>Time</th>
+                    <th>Time (UTC)</th>
                 </tr>
             </thead>
             <tbody>
@@ -388,7 +411,7 @@
                             <td>@item.Action</td>
                             <td>@item.PoiName (@item.PoiId)</td>
                             <td>@item.Role</td>
-                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm 'UTC'")</td>
                         </tr>
                     }
                 }

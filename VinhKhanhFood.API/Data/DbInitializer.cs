@@ -32,6 +32,9 @@ public static class DbInitializer
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 GuestId TEXT NOT NULL,
                 PaymentCode TEXT NOT NULL,
+                ClaimToken TEXT NOT NULL DEFAULT '',
+                ClaimedGuestId TEXT NULL,
+                ClaimedAtUtc TEXT NULL,
                 StartDate TEXT NOT NULL,
                 EndDate TEXT NOT NULL,
                 Status TEXT NOT NULL DEFAULT 'Active',
@@ -40,9 +43,28 @@ public static class DbInitializer
             );
 
             CREATE INDEX IF NOT EXISTS idx_subscriptions_guestid ON Subscriptions(GuestId);
+            CREATE INDEX IF NOT EXISTS idx_subscriptions_claimtoken ON Subscriptions(ClaimToken);
+            CREATE INDEX IF NOT EXISTS idx_subscriptions_claimedguestid ON Subscriptions(ClaimedGuestId);
             CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON Subscriptions(Status);
         ";
         await command.ExecuteNonQueryAsync(cancellationToken);
+
+        var columns = await GetTableColumnsAsync(connection, "Subscriptions", cancellationToken);
+
+        if (!columns.Contains("ClaimToken", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE Subscriptions ADD COLUMN ClaimToken TEXT NOT NULL DEFAULT '';", cancellationToken);
+        }
+
+        if (!columns.Contains("ClaimedGuestId", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE Subscriptions ADD COLUMN ClaimedGuestId TEXT NULL;", cancellationToken);
+        }
+
+        if (!columns.Contains("ClaimedAtUtc", StringComparer.OrdinalIgnoreCase))
+        {
+            await ExecuteAlterAsync(connection, "ALTER TABLE Subscriptions ADD COLUMN ClaimedAtUtc TEXT NULL;", cancellationToken);
+        }
     }
 
     private static async Task EnsureUsersVirtualColumnsAsync(SqliteConnection connection, CancellationToken cancellationToken)
@@ -120,12 +142,15 @@ public static class DbInitializer
         }
     }
 
-    private static async Task<HashSet<string>> GetUserTableColumnsAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    private static Task<HashSet<string>> GetUserTableColumnsAsync(SqliteConnection connection, CancellationToken cancellationToken) =>
+        GetTableColumnsAsync(connection, "Users", cancellationToken);
+
+    private static async Task<HashSet<string>> GetTableColumnsAsync(SqliteConnection connection, string tableName, CancellationToken cancellationToken)
     {
         var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         await using var command = connection.CreateCommand();
-        command.CommandText = "PRAGMA table_info('Users');";
+        command.CommandText = $"PRAGMA table_info('{tableName}');";
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))

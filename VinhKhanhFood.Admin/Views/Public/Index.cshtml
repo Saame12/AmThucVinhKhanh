@@ -1,7 +1,7 @@
 @model List<VinhKhanhFood.API.Models.FoodLocation>
 
 @{
-    ViewData["Title"] = "Vinh Khanh Food - Discover Local Cuisine";
+    ViewData["Title"] = "Vinh Khanh Food - Public Guide";
     Layout = null;
 }
 
@@ -14,7 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -25,14 +25,20 @@
             margin-bottom: 30px;
         }
         .header h1 {
-            font-size: 2.5rem;
-            font-weight: bold;
+            font-size: 2.4rem;
+            font-weight: 700;
             margin-bottom: 10px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
         .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-size: 1.05rem;
+            opacity: 0.92;
+        }
+        .header-card {
+            background: rgba(255,255,255,0.18);
+            padding: 14px 18px;
+            border-radius: 14px;
+            max-width: 680px;
+            margin: 20px auto 0;
         }
         .poi-grid {
             max-width: 1200px;
@@ -46,34 +52,30 @@
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.3s, box-shadow 0.3s;
-            cursor: pointer;
             text-decoration: none;
             color: inherit;
-            display: block;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
         .poi-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 14px 36px rgba(0,0,0,0.28);
         }
         .poi-image {
             width: 100%;
             height: 200px;
             object-fit: cover;
-            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
         }
         .poi-content {
-            padding: 20px;
+            padding: 18px;
         }
         .poi-name {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #1a202c;
-            margin-bottom: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
         }
         .poi-description {
-            font-size: 0.95rem;
-            color: #718096;
+            color: #6b7280;
             line-height: 1.6;
             display: -webkit-box;
             -webkit-line-clamp: 3;
@@ -82,85 +84,59 @@
         }
         .poi-badge {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            margin-top: 12px;
             padding: 5px 12px;
-            border-radius: 20px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #2563eb;
             font-size: 0.85rem;
-            margin-top: 10px;
-        }
-        .empty-state {
-            text-align: center;
-            color: white;
-            padding: 60px 20px;
-        }
-        .empty-state h2 {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🍜 Vinh Khanh Food</h1>
-        <p>Khám phá ẩm thực địa phương với hướng dẫn âm thanh</p>
+        <h1>Vinh Khanh Food Public Guide</h1>
+        <p>Vao he thong bang QR Public, xem mo ta co ban va mo khoa 10k de dung day du chuc nang trong app.</p>
         @if (ViewBag.HasSubscription == true)
         {
-            <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 12px; margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto;">
-                <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;">
-                    ✅ Gói 5 Năm Đã Kích Hoạt
-                </div>
-                <div style="font-size: 0.95rem; opacity: 0.9;">
-                    Bạn có thể truy cập tất cả POIs đến: @ViewBag.SubscriptionEndDate?.ToString("dd/MM/yyyy")
-                </div>
+            <div class="header-card">
+                <strong>Da thanh toan thanh cong.</strong>
+                Thiet bi web nay dang co quyen mo khoa den @ViewBag.SubscriptionEndDate?.ToString("dd/MM/yyyy")
             </div>
         }
         else
         {
-            <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 12px; margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto;">
-                <div style="font-size: 1rem; opacity: 0.9;">
-                    💡 Mua gói 5 năm để truy cập không giới hạn tất cả POIs
-                </div>
+            <div class="header-card">
+                Thanh toan <strong>10.000 VND</strong> tren trang POI bat ky, sau do bam <strong>Mo trong app</strong> de kich hoat cho dien thoai.
             </div>
         }
     </div>
 
-    @if (Model.Any())
-    {
-        <div class="poi-grid">
-            @foreach (var poi in Model)
-            {
-                var imageUrl = !string.IsNullOrWhiteSpace(poi.ImageUrl)
-                    ? (poi.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                        ? poi.ImageUrl
-                        : $"/images/{poi.ImageUrl.TrimStart('/')}")
-                    : "https://placehold.co/600x400/F5F5F5/9CA3AF?text=POI+Image";
+    <div class="poi-grid">
+        @foreach (var poi in Model)
+        {
+            var imageUrl = !string.IsNullOrWhiteSpace(poi.ImageUrl)
+                ? (poi.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                    ? poi.ImageUrl
+                    : $"/images/{poi.ImageUrl.TrimStart('/')}")
+                : "https://placehold.co/600x400/F5F5F5/9CA3AF?text=POI+Image";
 
-                <a href="/public/poi/@poi.Id" class="poi-card">
-                    <img src="@imageUrl"
-                         alt="@poi.Name"
-                         class="poi-image"
-                         onerror="this.src='https://placehold.co/600x400/F5F5F5/9CA3AF?text=POI+Image'; this.onerror=null;" />
-                    <div class="poi-content">
-                        <div class="poi-name">@poi.Name</div>
-                        @if (!string.IsNullOrWhiteSpace(poi.Description))
-                        {
-                            <div class="poi-description">@poi.Description</div>
-                        }
-                        <span class="poi-badge">🎧 Audio Guide Available</span>
-                    </div>
-                </a>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="empty-state">
-            <h2>📍 Chưa có điểm POI nào</h2>
-            <p>Hiện tại chưa có địa điểm nào được công khai. Vui lòng quay lại sau!</p>
-        </div>
-    }
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <a href="/public/poi/@poi.Id" class="poi-card">
+                <img src="@imageUrl"
+                     alt="@poi.Name"
+                     class="poi-image"
+                     onerror="this.src='https://placehold.co/600x400/F5F5F5/9CA3AF?text=POI+Image'; this.onerror=null;" />
+                <div class="poi-content">
+                    <div class="poi-name">@poi.Name</div>
+                    @if (!string.IsNullOrWhiteSpace(poi.Description))
+                    {
+                        <div class="poi-description">@poi.Description</div>
+                    }
+                    <span class="poi-badge">Mo ta co ban + mo khoa tren app</span>
+                </div>
+            </a>
+        }
+    </div>
 </body>
 </html>

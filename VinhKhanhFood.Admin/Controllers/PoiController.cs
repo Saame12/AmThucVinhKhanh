@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using System.Net.Http.Json;
 using VinhKhanhFood.Admin.Models;
 using ApiFoodLocation = VinhKhanhFood.API.Models.FoodLocation;
@@ -9,11 +8,9 @@ namespace VinhKhanhFood.Admin.Controllers
     public class PoiController : Controller
     {
         private readonly HttpClient _http;
-        private readonly IConfiguration _configuration;
 
-        public PoiController(IConfiguration configuration, IHttpClientFactory httpClientFactory)
+        public PoiController(IHttpClientFactory httpClientFactory)
         {
-            _configuration = configuration;
             _http = httpClientFactory.CreateClient("MyAPI");
         }
 
@@ -198,7 +195,6 @@ namespace VinhKhanhFood.Admin.Controllers
                 {
                     return RedirectToAction(nameof(Index));
                 }
-
                 return View(poi);
             }
             catch

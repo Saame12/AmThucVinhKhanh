@@ -194,7 +194,7 @@ namespace VinhKhanhFood.API.Controllers
                 Action = action,
                 PoiId = poiId,
                 PoiName = poiName,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             });
 
             await _context.SaveChangesAsync();

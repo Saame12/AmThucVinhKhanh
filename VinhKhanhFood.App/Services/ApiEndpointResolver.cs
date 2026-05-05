@@ -3,6 +3,7 @@ namespace VinhKhanhFood.App.Services;
 public static class ApiEndpointResolver
 {
     private const string DevApiOverrideKey = "DevApiBaseUrl";
+    private const string PublicWebOverrideKey = "PublicWebBaseUrl";
 
     public static string BaseServerUrl
     {
@@ -30,6 +31,8 @@ public static class ApiEndpointResolver
     }
 
     public static string BaseApiUrl => $"{BaseServerUrl}/api";
+    public static string PublicWebBaseUrl =>
+        Preferences.Default.Get(PublicWebOverrideKey, "https://vinkkhanhqrpay.byethost4.com").Trim().TrimEnd('/');
 
     public static string FoodEndpoint => $"{BaseApiUrl}/Food";
     public static string UserEndpoint => $"{BaseApiUrl}/User";
@@ -44,6 +47,23 @@ public static class ApiEndpointResolver
         }
 
         Preferences.Default.Set(DevApiOverrideKey, NormalizeBaseUrl(baseUrl));
+    }
+
+    public static string GetPublicPoiUrl(int poiId)
+    {
+        var baseUrl = PublicWebBaseUrl;
+
+        if (baseUrl.Contains("byethost", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{baseUrl}/poi.php?id={poiId}";
+        }
+
+        if (baseUrl.EndsWith("/public", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{baseUrl}/poi/{poiId}";
+        }
+
+        return $"{baseUrl}/public/poi/{poiId}";
     }
 
     public static string ResolveAssetUrl(string relativeOrAbsolutePath, string defaultFolder = "audio")

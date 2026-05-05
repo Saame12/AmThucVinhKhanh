@@ -1,0 +1,124 @@
+@model VinhKhanhFood.Admin.Models.PaymentHistoryViewModel
+@{
+    ViewData["Title"] = "Payment History";
+}
+
+<div class="container-fluid pt-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="mb-1">Lich su thanh toan</h2>
+            <p class="text-muted mb-0">Theo doi cac luot mo khoa 10k tu web public va trong app.</p>
+        </div>
+
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label for="status" class="form-label mb-0 text-muted">Trang thai</label>
+            <select id="status" name="status" class="form-select" onchange="this.form.submit()">
+                <option value="all" selected="@(Model.SelectedStatus == "all")">Tat ca</option>
+                <option value="active" selected="@(Model.SelectedStatus == "Active")">Active</option>
+                <option value="expired" selected="@(Model.SelectedStatus == "Expired")">Expired</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Tong giao dich</div>
+                    <div class="display-6 fw-bold">@Model.TotalPayments</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Dang active</div>
+                    <div class="display-6 fw-bold text-success">@Model.ActivePayments</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Da claim vao app</div>
+                    <div class="display-6 fw-bold text-primary">@Model.ClaimedPayments</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Tong doanh thu demo</div>
+                    <div class="display-6 fw-bold text-warning">@Model.TotalRevenue.ToString("N0")</div>
+                    <div class="small text-muted">VND</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Danh sach giao dich mo khoa</h5>
+        </div>
+        <div class="card-body p-0">
+            @if (!Model.Items.Any())
+            {
+                <div class="p-4 text-center text-muted">
+                    Chua co giao dich thanh toan nao trong bo loc nay.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Guest</th>
+                                <th>Payment Code</th>
+                                <th>So tien</th>
+                                <th>Trang thai</th>
+                                <th>Created (UTC)</th>
+                                <th>Claim vao app</th>
+                                <th>Claimed At (UTC)</th>
+                                <th>Hieu luc den</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="fw-semibold">#@item.Id</td>
+                                <td><code>@item.GuestId</code></td>
+                                <td><code>@item.PaymentCode</code></td>
+                                <td>@item.Amount.ToString("N0") VND</td>
+                                <td>
+                                    <span class="badge @(item.Status == "Active" ? "bg-success" : "bg-secondary")">
+                                        @item.Status
+                                    </span>
+                                </td>
+                                <td>@item.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td>
+                                    @if (item.IsClaimed)
+                                    {
+                                        <div class="small">
+                                            <span class="badge bg-primary mb-1">Da claim</span>
+                                            <div><code>@item.ClaimedGuestId</code></div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-dark">Chua claim</span>
+                                    }
+                                </td>
+                                <td>@(item.ClaimedAtUtc?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
+                                <td>@item.EndDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

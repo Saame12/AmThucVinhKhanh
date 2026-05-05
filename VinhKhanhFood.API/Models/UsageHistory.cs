@@ -16,6 +16,6 @@ public class UsageHistory
     public string PoiName { get; set; } = string.Empty;
 
     // 🔥 Thời gian
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string Role { get; set; } = "Owner"; // 🔥 NEW
 }

@@ -1,13 +1,13 @@
 @model VinhKhanhFood.API.Models.FoodLocation
 
 @{
-    ViewData["Title"] = "Audio QR";
+    ViewData["Title"] = "QR Audio Guide";
 }
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h2 class="mb-1">Audio QR cua POI</h2>
+            <h2 class="mb-1">QR Audio Guide cua POI</h2>
             <div class="text-muted">@Model.Name</div>
         </div>
         <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
@@ -22,7 +22,7 @@
                          class="img-fluid rounded"
                          style="max-width: 320px;" />
                     <div class="mt-3 fw-bold fs-5">@Model.QrCodeLabel</div>
-                    <div class="small text-muted mt-1">QR nay mo dung POI va phat audio mac dinh.</div>
+                    <div class="small text-muted mt-1">Quet ma nay de mo chi tiet POI va phat audio mac dinh trong app.</div>
                 </div>
             </div>
         </div>
@@ -32,22 +32,22 @@
                 <div class="card-body">
                     <h5 class="mb-3">Thong tin QR Audio</h5>
                     <div class="mb-2">
-                        <div class="text-muted small">Deep link</div>
+                        <div class="text-muted small">Deep link cua app</div>
                         <code>@Model.QrAudioUri</code>
                     </div>
                     <div class="mb-2">
-                        <div class="text-muted small">Ma nhap thu cong trong app</div>
+                        <div class="text-muted small">Ma nhap thu cong</div>
                         <code>@Model.QrManualCode</code>
                     </div>
                     <div>
-                        <div class="text-muted small">Trang thai audio mac dinh</div>
+                        <div class="text-muted small">Audio mac dinh</div>
                         @if (Model.HasDefaultAudio)
                         {
-                            <span class="badge bg-success">San sang phat</span>
+                            <span class="badge bg-success">San sang</span>
                         }
                         else
                         {
-                            <span class="badge bg-danger">Thieu mo ta de tao audio mac dinh</span>
+                            <span class="badge bg-secondary">Chua co noi dung audio</span>
                         }
                     </div>
                 </div>
@@ -57,11 +57,11 @@
                 <div class="card-body">
                     <h5 class="mb-3">Cach su dung</h5>
                     <ol class="mb-0">
-                        <li>Dan QR nay tai quan hoac diem POI.</li>
-                        <li>Du khach mo app va vao tab Scan QR.</li>
-                        <li>Quet QR de mo man hinh chi tiet POI.</li>
-                        <li>App se tu dong phat audio mac dinh tu mo ta cua POI.</li>
-                        <li>Nếu khong dung duoc camera, co the nhap ma <strong>@Model.QrManualCode</strong> trong muc nhap QR thu cong.</li>
+                        <li>In hoac dan QR nay tai diem POI.</li>
+                        <li>Khach mo app va quet QR tai trang Scan QR.</li>
+                        <li>App mo thang trang chi tiet cua POI.</li>
+                        <li>Audio mac dinh se tu dong phat neu POI co mo ta.</li>
+                        <li>Nguoi dung co the nhap ma <strong>@Model.QrManualCode</strong> de test thay cho camera.</li>
                     </ol>
                 </div>
             </div>

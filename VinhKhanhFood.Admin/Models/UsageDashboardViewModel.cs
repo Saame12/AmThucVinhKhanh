@@ -8,9 +8,10 @@ public sealed class UsageDashboardViewModel
     public int TotalAudioPlays { get; set; }
     public int DistinctPois { get; set; }
     public int ActiveDevicesNow { get; set; }
-    public int ActiveDevicesLast24Hours { get; set; }
-    public int ActiveDevicesThisMonth { get; set; }
+    public int ActiveDevicesInPeriod { get; set; }
+    public string ActiveDevicesInPeriodLabel { get; set; } = string.Empty;
     public int VisitorsAtPoiNow { get; set; }
+    // Hidden from the current UI, but still populated for geofence analytics.
     public int VisitorsBetweenPoisNow { get; set; }
     public int ActiveAudioListenersNow { get; set; }
     public PoiUsageStat? MostVisitedPoi { get; set; }
@@ -21,9 +22,11 @@ public sealed class UsageDashboardViewModel
     public List<PoiUsageStat> AudioRankings { get; set; } = [];
     public List<PoiHeatmapPoint> HeatmapPoints { get; set; } = [];
     public List<VisitorPoiPresenceStat> VisitorPresence { get; set; } = [];
+    // Hidden from the current UI, but still available for future reporting.
     public List<VisitorBetweenPoiStat> BetweenPoiVisitors { get; set; } = [];
     public List<PoiLiveAudioQueue> LiveAudioQueues { get; set; } = [];
     public List<UsageHistory> HistoryItems { get; set; } = [];
+    public List<User> DeviceUsers { get; set; } = [];
 }
 
 public sealed class PoiUsageStat
@@ -41,14 +44,6 @@ public sealed class PoiHeatmapPoint
     public double Longitude { get; set; }
     public int Intensity { get; set; }
     public double IntensityRatio { get; set; }
-}
-
-public sealed class DeviceHistoryViewModel
-{
-    public int ActiveDevicesNow { get; set; }
-    public int ActiveDevicesLast24Hours { get; set; }
-    public int ActiveDevicesThisMonth { get; set; }
-    public List<User> Devices { get; set; } = [];
 }
 
 public sealed class VisitorPoiPresenceStat

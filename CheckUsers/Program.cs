@@ -6,28 +6,49 @@ var connectionString = $"Data Source={dbPath}";
 using var connection = new SqliteConnection(connectionString);
 await connection.OpenAsync();
 
-var command = connection.CreateCommand();
-command.CommandText = @"
-    SELECT Id, Username, Password, FullName, Role, Status
-    FROM Users
-    ORDER BY Id;
-";
+await EnsureColumnAsync(connection, "Subscriptions", "ClaimToken", "TEXT NOT NULL DEFAULT ''");
+await EnsureColumnAsync(connection, "Subscriptions", "ClaimedGuestId", "TEXT NULL");
+await EnsureColumnAsync(connection, "Subscriptions", "ClaimedAtUtc", "TEXT NULL");
 
-using var reader = await command.ExecuteReaderAsync();
+await PrintColumnsAsync(connection, "Subscriptions");
+await PrintColumnsAsync(connection, "Users");
 
-Console.WriteLine("All Users in Database:");
-Console.WriteLine("=====================================");
-Console.WriteLine($"{"Id",-5} {"Username",-20} {"Password",-15} {"FullName",-25} {"Role",-15} {"Status",-10}");
-Console.WriteLine(new string('-', 95));
-
-while (await reader.ReadAsync())
+static async Task EnsureColumnAsync(SqliteConnection connection, string tableName, string columnName, string columnDefinition)
 {
-    var id = reader.GetInt32(0);
-    var username = reader.IsDBNull(1) ? "" : reader.GetString(1);
-    var password = reader.IsDBNull(2) ? "" : reader.GetString(2);
-    var fullName = reader.IsDBNull(3) ? "" : reader.GetString(3);
-    var role = reader.IsDBNull(4) ? "" : reader.GetString(4);
-    var status = reader.IsDBNull(5) ? "" : reader.GetString(5);
+    var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var readCommand = connection.CreateCommand();
+    readCommand.CommandText = $"PRAGMA table_info('{tableName}');";
 
-    Console.WriteLine($"{id,-5} {username,-20} {password,-15} {fullName,-25} {role,-15} {status,-10}");
+    using (var reader = await readCommand.ExecuteReaderAsync())
+    {
+        while (await reader.ReadAsync())
+        {
+            existingColumns.Add(reader.GetString(1));
+        }
+    }
+
+    if (existingColumns.Contains(columnName))
+    {
+        return;
+    }
+
+    var alterCommand = connection.CreateCommand();
+    alterCommand.CommandText = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnDefinition};";
+    await alterCommand.ExecuteNonQueryAsync();
+}
+
+static async Task PrintColumnsAsync(SqliteConnection connection, string tableName)
+{
+    var command = connection.CreateCommand();
+    command.CommandText = $"PRAGMA table_info('{tableName}');";
+
+    using var reader = await command.ExecuteReaderAsync();
+
+    Console.WriteLine($"Columns in {tableName}:");
+    while (await reader.ReadAsync())
+    {
+        Console.WriteLine($"- {reader.GetString(1)} ({reader.GetString(2)})");
+    }
+
+    Console.WriteLine();
 }
