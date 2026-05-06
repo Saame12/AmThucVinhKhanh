@@ -6,43 +6,64 @@ var connectionString = $"Data Source={dbPath}";
 using var connection = new SqliteConnection(connectionString);
 await connection.OpenAsync();
 
-await EnsureColumnAsync(connection, "Subscriptions", "ClaimToken", "TEXT NOT NULL DEFAULT ''");
-await EnsureColumnAsync(connection, "Subscriptions", "ClaimedGuestId", "TEXT NULL");
-await EnsureColumnAsync(connection, "Subscriptions", "ClaimedAtUtc", "TEXT NULL");
-
+await RemoveLegacySubscriptionColumnsAsync(connection);
 await PrintColumnsAsync(connection, "Subscriptions");
 await PrintColumnsAsync(connection, "Users");
 
-static async Task EnsureColumnAsync(SqliteConnection connection, string tableName, string columnName, string columnDefinition)
+static async Task RemoveLegacySubscriptionColumnsAsync(SqliteConnection connection)
 {
-    var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-    var readCommand = connection.CreateCommand();
-    readCommand.CommandText = $"PRAGMA table_info('{tableName}');";
+    var columns = await GetColumnsAsync(connection, "Subscriptions");
+    var legacyColumns = new[] { "ClaimToken", "ClaimedGuestId", "ClaimedAtUtc" };
 
-    using (var reader = await readCommand.ExecuteReaderAsync())
+    if (!legacyColumns.Any(columns.Contains))
     {
-        while (await reader.ReadAsync())
-        {
-            existingColumns.Add(reader.GetString(1));
-        }
-    }
-
-    if (existingColumns.Contains(columnName))
-    {
+        Console.WriteLine("Subscriptions schema is already clean.");
+        Console.WriteLine();
         return;
     }
 
-    var alterCommand = connection.CreateCommand();
-    alterCommand.CommandText = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnDefinition};";
-    await alterCommand.ExecuteNonQueryAsync();
+    await using var dbTransaction = await connection.BeginTransactionAsync();
+    var transaction = (SqliteTransaction)dbTransaction;
+
+    try
+    {
+        await ExecuteSqlAsync(connection, transaction, @"
+            CREATE TABLE Subscriptions_Clean (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                GuestId TEXT NOT NULL,
+                PaymentCode TEXT NOT NULL,
+                StartDate TEXT NOT NULL,
+                EndDate TEXT NOT NULL,
+                Status TEXT NOT NULL DEFAULT 'Active',
+                Amount REAL NOT NULL,
+                CreatedAt TEXT NOT NULL
+            );");
+
+        await ExecuteSqlAsync(connection, transaction, @"
+            INSERT INTO Subscriptions_Clean (Id, GuestId, PaymentCode, StartDate, EndDate, Status, Amount, CreatedAt)
+            SELECT Id, GuestId, PaymentCode, StartDate, EndDate, Status, Amount, CreatedAt
+            FROM Subscriptions;");
+
+        await ExecuteSqlAsync(connection, transaction, "DROP TABLE Subscriptions;");
+        await ExecuteSqlAsync(connection, transaction, "ALTER TABLE Subscriptions_Clean RENAME TO Subscriptions;");
+        await ExecuteSqlAsync(connection, transaction, "CREATE INDEX IF NOT EXISTS idx_subscriptions_guestid ON Subscriptions(GuestId);");
+        await ExecuteSqlAsync(connection, transaction, "CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON Subscriptions(Status);");
+
+        await transaction.CommitAsync();
+
+        Console.WriteLine("Removed legacy Claim* columns from Subscriptions.");
+        Console.WriteLine();
+    }
+    catch
+    {
+        await transaction.RollbackAsync();
+        throw;
+    }
 }
 
 static async Task PrintColumnsAsync(SqliteConnection connection, string tableName)
 {
-    var command = connection.CreateCommand();
-    command.CommandText = $"PRAGMA table_info('{tableName}');";
-
-    using var reader = await command.ExecuteReaderAsync();
+    using var reader = await CreateTableInfoCommand(connection, tableName).ExecuteReaderAsync();
 
     Console.WriteLine($"Columns in {tableName}:");
     while (await reader.ReadAsync())
@@ -51,4 +72,32 @@ static async Task PrintColumnsAsync(SqliteConnection connection, string tableNam
     }
 
     Console.WriteLine();
+}
+
+static async Task<HashSet<string>> GetColumnsAsync(SqliteConnection connection, string tableName)
+{
+    var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    using var reader = await CreateTableInfoCommand(connection, tableName).ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+    {
+        columns.Add(reader.GetString(1));
+    }
+
+    return columns;
+}
+
+static SqliteCommand CreateTableInfoCommand(SqliteConnection connection, string tableName)
+{
+    var command = connection.CreateCommand();
+    command.CommandText = $"PRAGMA table_info('{tableName}');";
+    return command;
+}
+
+static async Task ExecuteSqlAsync(SqliteConnection connection, SqliteTransaction transaction, string sql)
+{
+    using var command = connection.CreateCommand();
+    command.Transaction = transaction;
+    command.CommandText = sql;
+    await command.ExecuteNonQueryAsync();
 }

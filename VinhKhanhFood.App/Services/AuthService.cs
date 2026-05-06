@@ -155,38 +155,6 @@ public sealed class AuthService
         }
     }
 
-    public async Task<bool> ClaimUnlockAsync(string token, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            return false;
-        }
-
-        try
-        {
-            using var response = await _httpClient.PostAsJsonAsync(
-                $"{ApiEndpointResolver.UserEndpoint}/claim-unlock",
-                new
-                {
-                    GuestId,
-                    ClaimToken = token.Trim()
-                },
-                cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return false;
-            }
-
-            HasFullAccess = true;
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     public async Task<bool> PurchaseUnlockAsync(CancellationToken cancellationToken = default)
     {
         try

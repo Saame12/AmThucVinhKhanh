@@ -22,12 +22,14 @@ public class PublicController : Controller
     {
         try
         {
+            var guestId = GetOrCreateWebGuestId();
+            await EnsureWebGuestPresenceAsync(guestId);
+
             var pois = await _context.FoodLocations
                 .Where(poi => poi.Status == "Approved")
                 .OrderBy(poi => poi.Id)
                 .ToListAsync();
 
-            var guestId = Request.Cookies["GuestId"];
             var activeSubscription = await GetActiveSubscriptionAsync(guestId);
 
             ViewBag.HasSubscription = activeSubscription is not null;
@@ -52,10 +54,10 @@ public class PublicController : Controller
                 return NotFound("POI not found");
             }
 
-            var guestId = Request.Cookies["GuestId"];
-            var activeSubscription = await GetActiveSubscriptionAsync(guestId);
-            var claimToken = ResolveClaimToken(activeSubscription, payment);
+            var guestId = GetOrCreateWebGuestId();
+            await EnsureWebGuestPresenceAsync(guestId);
 
+            var activeSubscription = await GetActiveSubscriptionAsync(guestId);
             var viewModel = new PublicPoiViewModel
             {
                 PoiId = poi.Id,
@@ -66,11 +68,6 @@ public class PublicController : Controller
                 Longitude = poi.Longitude,
                 HasDefaultAudio = !string.IsNullOrWhiteSpace(poi.Description),
                 HasPaid = activeSubscription is not null,
-                HasClaimToken = !string.IsNullOrWhiteSpace(claimToken),
-                ClaimToken = claimToken ?? string.Empty,
-                OpenInAppUrl = !string.IsNullOrWhiteSpace(claimToken)
-                    ? $"vinhkhanhfood://unlock?token={Uri.EscapeDataString(claimToken)}&poiId={poi.Id}"
-                    : string.Empty,
                 Amount = PublicUnlockPrice,
                 PaymentQrCode = GeneratePaymentQrCode(),
                 PaymentQrImageUrl = GeneratePaymentQrImageUrl()
@@ -100,15 +97,15 @@ public class PublicController : Controller
         var guestId = Request.Cookies["GuestId"];
         if (string.IsNullOrWhiteSpace(guestId))
         {
-            guestId = Guid.NewGuid().ToString("N");
+            guestId = GetOrCreateWebGuestId();
         }
 
-        var claimToken = Guid.NewGuid().ToString("N");
+        await EnsureWebGuestPresenceAsync(guestId);
+
         var subscription = new Subscription
         {
             GuestId = guestId,
             PaymentCode = request.TransactionCode,
-            ClaimToken = claimToken,
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddYears(5),
             Status = "Active",
@@ -119,23 +116,90 @@ public class PublicController : Controller
         _context.Subscriptions.Add(subscription);
         await _context.SaveChangesAsync();
 
-        Response.Cookies.Append("GuestId", guestId, new CookieOptions
-        {
-            Expires = DateTimeOffset.UtcNow.AddYears(5),
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Lax
-        });
+        Response.Cookies.Append("GuestId", guestId, BuildPublicGuestCookieOptions());
 
-        var redirectUrl = $"/public/poi/{id}?payment={Uri.EscapeDataString(claimToken)}";
+        var redirectUrl = $"/public/poi/{id}";
 
         return Ok(new
         {
             success = true,
             redirectUrl,
-            claimToken,
-            message = "Da mo khoa thanh cong. Ban co the tiep tuc tren web hoac mo trong app."
+            message = "Da mo khoa thanh cong. Ban co the su dung day du chuc nang tren web public."
         });
+    }
+
+    private string GetOrCreateWebGuestId()
+    {
+        var guestId = Request.Cookies["GuestId"];
+        if (!string.IsNullOrWhiteSpace(guestId))
+        {
+            return guestId.Trim();
+        }
+
+        guestId = Guid.NewGuid().ToString("N");
+        Response.Cookies.Append("GuestId", guestId, BuildPublicGuestCookieOptions());
+        return guestId;
+    }
+
+    private async Task EnsureWebGuestPresenceAsync(string guestId)
+    {
+        if (string.IsNullOrWhiteSpace(guestId))
+        {
+            return;
+        }
+
+        var normalizedGuestId = guestId.Trim();
+        var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var displayName = BuildWebGuestDisplayName(remoteIp, normalizedGuestId);
+        var user = await _context.Users.FirstOrDefaultAsync(item =>
+            item.IsVirtual &&
+            item.GuestId == normalizedGuestId &&
+            item.Role == "WebGuest");
+
+        if (user is null)
+        {
+            user = new VinhKhanhFood.API.Models.User
+            {
+                Username = displayName,
+                Password = string.Empty,
+                FullName = displayName,
+                Role = "WebGuest",
+                Status = "Active",
+                IsVirtual = true,
+                GuestId = normalizedGuestId,
+                RemoteIp = remoteIp,
+                LastSeenUtc = DateTime.UtcNow
+            };
+
+            _context.Users.Add(user);
+        }
+        else
+        {
+            user.Username = displayName;
+            user.FullName = displayName;
+            user.RemoteIp = remoteIp;
+            user.LastSeenUtc = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    private CookieOptions BuildPublicGuestCookieOptions() =>
+        new()
+        {
+            Expires = DateTimeOffset.UtcNow.AddYears(5),
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax
+        };
+
+    private static string BuildWebGuestDisplayName(string? remoteIp, string guestId)
+    {
+        var normalizedIp = string.IsNullOrWhiteSpace(remoteIp)
+            ? "unknown-ip"
+            : remoteIp.Replace(":", "-").Replace("%", "-").Trim();
+        var suffix = guestId.Length > 6 ? guestId[^6..] : guestId;
+        return $"web-guid-{normalizedIp}-{suffix}";
     }
 
     private async Task<Subscription?> GetActiveSubscriptionAsync(string? guestId)
@@ -154,21 +218,6 @@ public class PublicController : Controller
             .FirstOrDefaultAsync();
     }
 
-    private static string? ResolveClaimToken(Subscription? activeSubscription, string? claimTokenQuery)
-    {
-        if (!string.IsNullOrWhiteSpace(claimTokenQuery))
-        {
-            return claimTokenQuery.Trim();
-        }
-
-        if (activeSubscription is not null && !string.IsNullOrWhiteSpace(activeSubscription.ClaimToken))
-        {
-            return activeSubscription.ClaimToken.Trim();
-        }
-
-        return null;
-    }
-
     private static bool IsValidPaymentCode(string code)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -176,17 +225,17 @@ public class PublicController : Controller
             return false;
         }
 
-        return code.StartsWith("PAY-10K-", StringComparison.OrdinalIgnoreCase) ||
+        return code.StartsWith("WEB-10K-", StringComparison.OrdinalIgnoreCase) ||
                code.Equals("DEMO-10K", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string GeneratePaymentQrCode() =>
-        $"PAY-10K-{DateTime.UtcNow:yyyyMMddHHmmss}";
+        $"WEB-10K-{DateTime.UtcNow:yyyyMMddHHmmss}";
 
     private static string GeneratePaymentQrImageUrl()
     {
         var paymentCode = GeneratePaymentQrCode();
-        var paymentUri = $"vinhkhanhpay://unlock?code={paymentCode}&amount={PublicUnlockPrice:0}";
+        var paymentUri = $"vinhkhanhweb://unlock?code={paymentCode}&amount={PublicUnlockPrice:0}";
         return $"https://quickchart.io/qr?size=300&text={Uri.EscapeDataString(paymentUri)}";
     }
 }

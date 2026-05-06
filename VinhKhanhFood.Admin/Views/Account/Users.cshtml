@@ -5,7 +5,7 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Quan sat nguoi dung app</h2>
+    <h2 class="mb-0">Quan sat nguoi dung app va web</h2>
 </div>
 
 @if (TempData["Error"] is string errorMessage)
@@ -30,6 +30,7 @@
             var displayId = string.IsNullOrWhiteSpace(u.DisplayId) ? u.Id.ToString() : u.DisplayId;
             var isAdmin = string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase);
             var isOwner = string.Equals(u.Role, "Owner", StringComparison.OrdinalIgnoreCase);
+            var isWebGuest = string.Equals(u.Role, "WebGuest", StringComparison.OrdinalIgnoreCase);
             var isVirtual = u.IsVirtual;
 
             <tr>
@@ -47,7 +48,9 @@
                     }
                     else if (isVirtual)
                     {
-                        <span class="badge bg-warning text-dark">Guest</span>
+                        <span class="badge @(isWebGuest ? "bg-info text-dark" : "bg-warning text-dark")">
+                            @(isWebGuest ? "Web Guest" : "App Guest")
+                        </span>
                     }
                     else
                     {
@@ -57,7 +60,7 @@
                 <td>
                     @if (isVirtual)
                     {
-                        <span class="badge bg-light text-dark border">guid</span>
+                        <span class="badge bg-light text-dark border">@(isWebGuest ? "web guid" : "app guid")</span>
                     }
                     else
                     {

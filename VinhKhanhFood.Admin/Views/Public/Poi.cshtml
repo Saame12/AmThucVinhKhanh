@@ -154,7 +154,7 @@
             <div class="feature-box">
                 <strong>Noi dung co ban</strong>
                 <div class="text-muted mt-2">
-                    Ban co the xem mo ta POI tren web. Thanh toan 1 lan 10k de mo khoa day du chuc nang tren web public va app cho phien su dung nay.
+                    Ban co the xem mo ta POI tren web. Thanh toan 1 lan 10k de mo khoa day du chuc nang tren web public cho phien su dung nay.
                 </div>
             </div>
 
@@ -165,7 +165,7 @@
                     <div class="text-muted mt-2">
                         @if (Model.HasPaid)
                         {
-                            <span>Ban da mo khoa. Co the nghe audio mac dinh ngay tren web public.</span>
+                            <span>Ban da mo khoa web public. Co the nghe audio mac dinh ngay tai day.</span>
                         }
                         else
                         {
@@ -194,16 +194,12 @@
                 </div>
             }
 
-            @if (Model.HasPaid && Model.HasClaimToken)
+            @if (Model.HasPaid)
             {
                 <div class="unlock-card" style="background:#ecfeff;border-color:#a5f3fc;">
                     <div class="fw-bold fs-5 text-success">Da thanh toan thanh cong</div>
                     <div class="text-muted mt-2">
-                        Ban da mo khoa thanh cong cho web public. Bay gio co the nghe audio mac dinh tren web hoac bam mo trong app de kich hoat tren dien thoai nay.
-                    </div>
-                    <a href="@Model.OpenInAppUrl" class="open-app-btn">Mo trong app</a>
-                    <div class="small text-muted mt-3">
-                        Token demo: <code>@Model.ClaimToken</code>
+                        Ban da mo khoa thanh cong cho web public. Bay gio co the nghe audio mac dinh va xem day du noi dung tren web.
                     </div>
                 </div>
             }
@@ -212,7 +208,7 @@
                 <div class="unlock-card">
                     <div class="fw-bold fs-4">Mo khoa toan bo chuc nang</div>
                     <div class="text-muted mt-2">
-                        Thanh toan 1 lan de mo khoa app cho thiet bi nay. Sau khi thanh toan xong, bam <strong>Mo trong app</strong> de kich hoat tren dien thoai.
+                        Thanh toan 1 lan de mo khoa toan bo chuc nang tren web public. Neu muon nghe audio guide trong app, nguoi dung se mo khoa 10k rieng trong app.
                     </div>
 
                     <div class="unlock-price mt-3">@Model.Amount.ToString("N0") VND</div>

@@ -34,12 +34,16 @@ public class PaymentController : Controller
             .OrderByDescending(item => item.CreatedAt)
             .ToListAsync();
 
+        var webPayments = subscriptions.Count(item => string.Equals(ResolveSource(item), "Web", StringComparison.OrdinalIgnoreCase));
+        var appPayments = subscriptions.Count(item => string.Equals(ResolveSource(item), "App", StringComparison.OrdinalIgnoreCase));
+
         var model = new PaymentHistoryViewModel
         {
             SelectedStatus = normalizedStatus,
             TotalPayments = subscriptions.Count,
             ActivePayments = subscriptions.Count(item => string.Equals(item.Status, "Active", StringComparison.OrdinalIgnoreCase)),
-            ClaimedPayments = subscriptions.Count(item => !string.IsNullOrWhiteSpace(item.ClaimedGuestId)),
+            WebPayments = webPayments,
+            AppPayments = appPayments,
             TotalRevenue = subscriptions.Sum(item => item.Amount),
             Items = subscriptions.Select(item => new PaymentHistoryItem
             {
@@ -48,12 +52,10 @@ public class PaymentController : Controller
                 PaymentCode = item.PaymentCode,
                 Status = item.Status,
                 Amount = item.Amount,
+                Source = ResolveSource(item),
                 CreatedAt = item.CreatedAt,
                 StartDate = item.StartDate,
-                EndDate = item.EndDate,
-                ClaimToken = item.ClaimToken,
-                ClaimedGuestId = item.ClaimedGuestId,
-                ClaimedAtUtc = item.ClaimedAtUtc
+                EndDate = item.EndDate
             }).ToList()
         };
 
@@ -68,6 +70,13 @@ public class PaymentController : Controller
             "expired" => "Expired",
             _ => "all"
         };
+    }
+
+    private static string ResolveSource(VinhKhanhFood.API.Models.Subscription item)
+    {
+        return item.PaymentCode.StartsWith("APP-10K-", StringComparison.OrdinalIgnoreCase)
+            ? "App"
+            : "Web";
     }
 
     private IActionResult? EnsureAdminAccess()

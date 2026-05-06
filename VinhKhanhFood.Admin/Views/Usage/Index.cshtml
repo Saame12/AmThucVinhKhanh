@@ -263,10 +263,11 @@
                 {
                     @foreach (var device in Model.DeviceUsers)
                     {
+                        var isWebGuest = string.Equals(device.Role, "WebGuest", StringComparison.OrdinalIgnoreCase);
                         <tr>
                             <td>@(string.IsNullOrWhiteSpace(device.DisplayId) ? device.Id.ToString() : device.DisplayId)</td>
                             <td>@device.Username</td>
-                            <td>@(device.IsVirtual ? "guid" : "registered")</td>
+                            <td>@(device.IsVirtual ? (isWebGuest ? "web guid" : "app guid") : "registered")</td>
                             <td>
                                 @if (device.OnlineStatus == "Online")
                                 {

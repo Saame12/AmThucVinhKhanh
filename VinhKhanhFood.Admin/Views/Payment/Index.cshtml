@@ -7,7 +7,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h2 class="mb-1">Lich su thanh toan</h2>
-            <p class="text-muted mb-0">Theo doi cac luot mo khoa 10k tu web public va trong app.</p>
+            <p class="text-muted mb-0">Theo doi cac luot mo khoa 10k tren web public va trong app, tach rieng theo nguon su dung.</p>
         </div>
 
         <form method="get" class="d-flex align-items-center gap-2">
@@ -40,19 +40,26 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small mb-1">Da claim vao app</div>
-                    <div class="display-6 fw-bold text-primary">@Model.ClaimedPayments</div>
+                    <div class="text-muted small mb-1">Giao dich web</div>
+                    <div class="display-6 fw-bold text-primary">@Model.WebPayments</div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="text-muted small mb-1">Tong doanh thu demo</div>
-                    <div class="display-6 fw-bold text-warning">@Model.TotalRevenue.ToString("N0")</div>
-                    <div class="small text-muted">VND</div>
+                    <div class="text-muted small mb-1">Giao dich app</div>
+                    <div class="display-6 fw-bold text-warning">@Model.AppPayments</div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="text-muted small mb-1">Tong doanh thu demo</div>
+            <div class="display-6 fw-bold text-warning">@Model.TotalRevenue.ToString("N0")</div>
+            <div class="small text-muted">VND</div>
         </div>
     </div>
 
@@ -75,12 +82,11 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Guest</th>
+                                <th>Nguon</th>
                                 <th>Payment Code</th>
                                 <th>So tien</th>
                                 <th>Trang thai</th>
                                 <th>Created (UTC)</th>
-                                <th>Claim vao app</th>
-                                <th>Claimed At (UTC)</th>
                                 <th>Hieu luc den</th>
                             </tr>
                         </thead>
@@ -90,6 +96,11 @@
                             <tr>
                                 <td class="fw-semibold">#@item.Id</td>
                                 <td><code>@item.GuestId</code></td>
+                                <td>
+                                    <span class="badge @(item.Source == "App" ? "bg-warning text-dark" : "bg-info text-dark")">
+                                        @item.Source
+                                    </span>
+                                </td>
                                 <td><code>@item.PaymentCode</code></td>
                                 <td>@item.Amount.ToString("N0") VND</td>
                                 <td>
@@ -98,20 +109,6 @@
                                     </span>
                                 </td>
                                 <td>@item.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                <td>
-                                    @if (item.IsClaimed)
-                                    {
-                                        <div class="small">
-                                            <span class="badge bg-primary mb-1">Da claim</span>
-                                            <div><code>@item.ClaimedGuestId</code></div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-light text-dark">Chua claim</span>
-                                    }
-                                </td>
-                                <td>@(item.ClaimedAtUtc?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
                                 <td>@item.EndDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
                             </tr>
                         }

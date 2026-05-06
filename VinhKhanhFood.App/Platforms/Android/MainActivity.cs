@@ -20,11 +20,6 @@ namespace VinhKhanhFood.App;
     Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
     DataScheme = "vinhkhanhfood",
     DataHost = "poi")]
-[IntentFilter(
-    new[] { Intent.ActionView },
-    Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
-    DataScheme = "vinhkhanhfood",
-    DataHost = "unlock")]
 public class MainActivity : MauiAppCompatActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)

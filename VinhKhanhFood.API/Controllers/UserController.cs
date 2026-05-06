@@ -131,7 +131,8 @@ public class UserController : ControllerBase
         var activeUnlock = await _context.Subscriptions
             .Where(subscription =>
                 subscription.Status == "Active" &&
-                subscription.ClaimedGuestId == normalizedGuestId &&
+                subscription.GuestId == normalizedGuestId &&
+                subscription.PaymentCode.StartsWith("APP-10K-") &&
                 subscription.EndDate > DateTime.UtcNow)
             .OrderByDescending(subscription => subscription.EndDate)
             .FirstOrDefaultAsync();
@@ -140,52 +141,7 @@ public class UserController : ControllerBase
         {
             guestId = normalizedGuestId,
             hasFullAccess = activeUnlock is not null,
-            unlockEndDateUtc = activeUnlock?.EndDate,
-            claimedAtUtc = activeUnlock?.ClaimedAtUtc
-        });
-    }
-
-    [HttpPost("claim-unlock")]
-    public async Task<IActionResult> ClaimUnlock([FromBody] ClaimUnlockRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.GuestId) || string.IsNullOrWhiteSpace(request.ClaimToken))
-        {
-            return BadRequest(new { message = "GuestId and claim token are required." });
-        }
-
-        var normalizedGuestId = request.GuestId.Trim();
-        var normalizedToken = request.ClaimToken.Trim();
-
-        var subscription = await _context.Subscriptions
-            .Where(item =>
-                item.ClaimToken == normalizedToken &&
-                item.Status == "Active" &&
-                item.EndDate > DateTime.UtcNow)
-            .OrderByDescending(item => item.EndDate)
-            .FirstOrDefaultAsync();
-
-        if (subscription is null)
-        {
-            return NotFound(new { message = "Unlock token is invalid or expired." });
-        }
-
-        if (!string.IsNullOrWhiteSpace(subscription.ClaimedGuestId) &&
-            !string.Equals(subscription.ClaimedGuestId, normalizedGuestId, StringComparison.OrdinalIgnoreCase))
-        {
-            return Conflict(new { message = "Unlock token has already been claimed on another device." });
-        }
-
-        subscription.ClaimedGuestId = normalizedGuestId;
-        subscription.ClaimedAtUtc ??= DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        return Ok(new
-        {
-            guestId = normalizedGuestId,
-            hasFullAccess = true,
-            unlockEndDateUtc = subscription.EndDate,
-            claimedAtUtc = subscription.ClaimedAtUtc
+            unlockEndDateUtc = activeUnlock?.EndDate
         });
     }
 
@@ -201,7 +157,8 @@ public class UserController : ControllerBase
         var existingUnlock = await _context.Subscriptions
             .Where(subscription =>
                 subscription.Status == "Active" &&
-                subscription.ClaimedGuestId == normalizedGuestId &&
+                subscription.GuestId == normalizedGuestId &&
+                subscription.PaymentCode.StartsWith("APP-10K-") &&
                 subscription.EndDate > DateTime.UtcNow)
             .OrderByDescending(subscription => subscription.EndDate)
             .FirstOrDefaultAsync();
@@ -213,7 +170,6 @@ public class UserController : ControllerBase
                 guestId = normalizedGuestId,
                 hasFullAccess = true,
                 unlockEndDateUtc = existingUnlock.EndDate,
-                claimedAtUtc = existingUnlock.ClaimedAtUtc,
                 paymentCode = existingUnlock.PaymentCode,
                 source = "Existing"
             });
@@ -224,9 +180,6 @@ public class UserController : ControllerBase
         {
             GuestId = normalizedGuestId,
             PaymentCode = $"APP-10K-{nowUtc:yyyyMMddHHmmss}",
-            ClaimToken = Guid.NewGuid().ToString("N"),
-            ClaimedGuestId = normalizedGuestId,
-            ClaimedAtUtc = nowUtc,
             StartDate = nowUtc,
             EndDate = nowUtc.AddYears(5),
             Status = "Active",
@@ -242,7 +195,6 @@ public class UserController : ControllerBase
             guestId = normalizedGuestId,
             hasFullAccess = true,
             unlockEndDateUtc = subscription.EndDate,
-            claimedAtUtc = subscription.ClaimedAtUtc,
             paymentCode = subscription.PaymentCode,
             source = "InApp"
         });
@@ -614,12 +566,6 @@ public sealed class LoginRequest
 {
     public string Username { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
-}
-
-public sealed class ClaimUnlockRequest
-{
-    public string GuestId { get; set; } = string.Empty;
-    public string ClaimToken { get; set; } = string.Empty;
 }
 
 public sealed class PurchaseUnlockRequest

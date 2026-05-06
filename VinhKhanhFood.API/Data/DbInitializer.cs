@@ -32,9 +32,6 @@ public static class DbInitializer
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 GuestId TEXT NOT NULL,
                 PaymentCode TEXT NOT NULL,
-                ClaimToken TEXT NOT NULL DEFAULT '',
-                ClaimedGuestId TEXT NULL,
-                ClaimedAtUtc TEXT NULL,
                 StartDate TEXT NOT NULL,
                 EndDate TEXT NOT NULL,
                 Status TEXT NOT NULL DEFAULT 'Active',
@@ -43,27 +40,56 @@ public static class DbInitializer
             );
 
             CREATE INDEX IF NOT EXISTS idx_subscriptions_guestid ON Subscriptions(GuestId);
-            CREATE INDEX IF NOT EXISTS idx_subscriptions_claimtoken ON Subscriptions(ClaimToken);
-            CREATE INDEX IF NOT EXISTS idx_subscriptions_claimedguestid ON Subscriptions(ClaimedGuestId);
             CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON Subscriptions(Status);
         ";
         await command.ExecuteNonQueryAsync(cancellationToken);
 
+        await RemoveLegacySubscriptionColumnsAsync(connection, cancellationToken);
+    }
+
+    private static async Task RemoveLegacySubscriptionColumnsAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    {
         var columns = await GetTableColumnsAsync(connection, "Subscriptions", cancellationToken);
+        var legacyColumns = new[] { "ClaimToken", "ClaimedGuestId", "ClaimedAtUtc" };
 
-        if (!columns.Contains("ClaimToken", StringComparer.OrdinalIgnoreCase))
+        if (!legacyColumns.Any(columns.Contains))
         {
-            await ExecuteAlterAsync(connection, "ALTER TABLE Subscriptions ADD COLUMN ClaimToken TEXT NOT NULL DEFAULT '';", cancellationToken);
+            return;
         }
 
-        if (!columns.Contains("ClaimedGuestId", StringComparer.OrdinalIgnoreCase))
-        {
-            await ExecuteAlterAsync(connection, "ALTER TABLE Subscriptions ADD COLUMN ClaimedGuestId TEXT NULL;", cancellationToken);
-        }
+        await using var dbTransaction = await connection.BeginTransactionAsync(cancellationToken);
+        var transaction = (SqliteTransaction)dbTransaction;
 
-        if (!columns.Contains("ClaimedAtUtc", StringComparer.OrdinalIgnoreCase))
+        try
         {
-            await ExecuteAlterAsync(connection, "ALTER TABLE Subscriptions ADD COLUMN ClaimedAtUtc TEXT NULL;", cancellationToken);
+            await ExecuteNonQueryAsync(connection, transaction, @"
+                CREATE TABLE Subscriptions_Clean (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    GuestId TEXT NOT NULL,
+                    PaymentCode TEXT NOT NULL,
+                    StartDate TEXT NOT NULL,
+                    EndDate TEXT NOT NULL,
+                    Status TEXT NOT NULL DEFAULT 'Active',
+                    Amount REAL NOT NULL,
+                    CreatedAt TEXT NOT NULL
+                );", cancellationToken);
+
+            await ExecuteNonQueryAsync(connection, transaction, @"
+                INSERT INTO Subscriptions_Clean (Id, GuestId, PaymentCode, StartDate, EndDate, Status, Amount, CreatedAt)
+                SELECT Id, GuestId, PaymentCode, StartDate, EndDate, Status, Amount, CreatedAt
+                FROM Subscriptions;", cancellationToken);
+
+            await ExecuteNonQueryAsync(connection, transaction, "DROP TABLE Subscriptions;", cancellationToken);
+            await ExecuteNonQueryAsync(connection, transaction, "ALTER TABLE Subscriptions_Clean RENAME TO Subscriptions;", cancellationToken);
+            await ExecuteNonQueryAsync(connection, transaction, "CREATE INDEX IF NOT EXISTS idx_subscriptions_guestid ON Subscriptions(GuestId);", cancellationToken);
+            await ExecuteNonQueryAsync(connection, transaction, "CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON Subscriptions(Status);", cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
         }
     }
 
@@ -164,6 +190,18 @@ public static class DbInitializer
     private static async Task ExecuteAlterAsync(SqliteConnection connection, string sql, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task ExecuteNonQueryAsync(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string sql,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = sql;
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
